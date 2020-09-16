@@ -4,7 +4,7 @@
 
 	// $url='http://api.geonames.org/countryInfoJSON?formatted=true&lang=' . $_REQUEST['lang'] . '&country=' . $_REQUEST['country'] . '&username=jherring_eng&style=full';
 	// $url='http://api.geonames.org/countryInfoJSON?formatted=true&country=' . $_REQUEST['country'] . '&username=jherring_eng&style=full';
-	$url='http://api.geonames.org/countryInfoJSON?formatted=true&lang=it&country=GB&username=jherring_eng&style=full';
+	$url='http://api.geonames.org/countryInfoJSON?formatted=true&lang=it&country=' . $_REQUEST['country'] . '&username=jherring_eng&style=full';
 
 	$ch = curl_init();
 	curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
