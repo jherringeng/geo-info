@@ -42,23 +42,26 @@ var latCentre = (north + south) / 2,
 
 				if (result.status.name == "ok") {
 
-					// $('#txtContinent').html(result['data'][0]['continent']);
-					// $('#txtCapital').html(result['data'][0]['capital']);
-					// $('#txtLanguages').html(result['data'][0]['languages']);
-					// $('#txtPopulation').html(result['data'][0]['population']);
-					// $('#txtArea').html(result['data'][0]['areaInSqKm']);
+					$('#txtContinent').html(result['data'][0]['continent']);
+					$('#txtCapital').html(result['data'][0]['capital']);
+					$('#txtLanguages').html(result['data'][0]['languages']);
+					$('#txtPopulation').html(result['data'][0]['population']);
+					$('#txtArea').html(result['data'][0]['areaInSqKm']);
 
 					north = result['data'][0]['north'];
 			    east = result['data'][0]['east'];
 			    south = result['data'][0]['south'];
 			    west = result['data'][0]['west'];
 
-					latCentre = (north + south) / 2;
-					lngCentre = (east + west) / 2;
-					scaling = 5;
-
-					mymap.flyTo([latCentre, lngCentre], 5);
-
+					// latCentre = (north + south) / 2;
+					// lngCentre = (east + west) / 2;
+					// scaling = 5;
+					//
+					// mymap.flyTo([latCentre, lngCentre], 5);
+					var northWest = L.latLng(north, west),
+						southEast = L.latLng(south, east),
+						bounds = L.latLngBounds(northWest, southEast);
+					mymap.flyToBounds(bounds);
 				}
 
 			},
@@ -67,4 +70,9 @@ var latCentre = (north + south) / 2,
 			}
 		});
 
+	});
+
+	$('#showInfo').click(function() {
+		jQuery('#exampleModal').modal('toggle');
+		console.log("Showing modal?")
 	});
