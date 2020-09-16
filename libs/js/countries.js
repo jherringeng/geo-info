@@ -7,7 +7,7 @@ var latCentre = (north + south) / 2,
 		lngCentre = (east + west) / 2,
 		scaling = 5;
 
-
+var countryBorders;
 
 	$( document ).ready(function() {
 		mymap = L.map('mapid').setView([latCentre, lngCentre], 5);
@@ -20,6 +20,9 @@ var latCentre = (north + south) / 2,
 			 zoomOffset: -1,
 			 accessToken: 'your.mapbox.access.token'
 		}).addTo(mymap);
+
+		L.geoJSON(countryBorders).addTo(mymap);
+
 	});
 
 
@@ -53,15 +56,40 @@ var latCentre = (north + south) / 2,
 			    south = result['data'][0]['south'];
 			    west = result['data'][0]['west'];
 
-					// latCentre = (north + south) / 2;
-					// lngCentre = (east + west) / 2;
-					// scaling = 5;
-					//
-					// mymap.flyTo([latCentre, lngCentre], 5);
+					latCentre = (north + south) / 2;
+					lngCentre = (east + west) / 2;
+
 					var northWest = L.latLng(north, west),
 						southEast = L.latLng(south, east),
 						bounds = L.latLngBounds(northWest, southEast);
 					mymap.flyToBounds(bounds);
+				}
+
+			},
+			error: function(jqXHR, textStatus, errorThrown) {
+				console.log("Request failed");
+			}
+		});
+
+		$.ajax({
+			url: "libs/php/getTimeInfo.php",
+			type: 'POST',
+			dataType: 'json',
+			data: {
+				lat: latCentre,
+				lng: lngCentre
+			},
+			success: function(result) {
+
+				console.log(result);
+
+				if (result.status.name == "ok") {
+
+					$('#txtContinent').html(result['data']['time']);
+					$('#txtCapital').html(result['data']['gmtOffset']);
+					$('#txtLanguages').html(result['data']['gmtOffset']);
+					$('#txtPopulation').html(result['data']['sunrise']);
+					$('#txtArea').html(result['data']['sunset']);
 				}
 
 			},
@@ -76,3 +104,14 @@ var latCentre = (north + south) / 2,
 		jQuery('#exampleModal').modal('toggle');
 		console.log("Showing modal?")
 	});
+
+
+	let requestURL = '/mapping/libs/js/countries_small.json';
+	let request = new XMLHttpRequest();
+	request.open('GET', requestURL);
+	request.responseType = 'json';
+	request.send();
+	request.onload = function() {
+	  countryBorders = request.response;
+	  console.log(countryBorders);
+	}
