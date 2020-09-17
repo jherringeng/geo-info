@@ -7,7 +7,21 @@ var latCentre = (north + south) / 2,
 		lngCentre = (east + west) / 2,
 		scaling = 5;
 
-var countryBorders;
+var countryBorders, countryCodes;
+var countryInfo, countryTimeInfo;
+var monthsArray = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
+var requestURL = '/mapping/libs/js/countries_small.json';
+var request = new XMLHttpRequest();
+request.open('GET', requestURL);
+request.responseType = 'json';
+request.send();
+request.onload = function() {
+	countryBorders = request.response[0];
+	console.log(countryBorders);
+	countryCodes = request.response[1];
+	console.log(countryCodes);
+}
 
 	$( document ).ready(function() {
 		mymap = L.map('mapid').setView([latCentre, lngCentre], 5);
@@ -29,14 +43,23 @@ var countryBorders;
 
 	$('#btnRun').click(function() {
 
-		// lang = $('#selLanguage').val();
+		var countryCode2 = $('#selCountry').val();
+
+		// requestURL = '/mapping/libs/js/country_codes.json';
+		// request.open('GET', requestURL);
+		// request.responseType = 'json';
+		// request.send();
+		// request.onload = function() {
+		//   countryCodes = request.response;
+		//   console.log(countryCodes);
+		// }
 
 		$.ajax({
 			url: "libs/php/getCountryInfo.php",
 			type: 'POST',
 			dataType: 'json',
 			data: {
-				country: $('#selCountry').val()
+				country: countryCode2
 				// lang: $('#selLanguage').val()
 			},
 			success: function(result) {
@@ -50,6 +73,14 @@ var countryBorders;
 					$('#txtLanguages').html(result['data'][0]['languages']);
 					$('#txtPopulation').html(result['data'][0]['population']);
 					$('#txtArea').html(result['data'][0]['areaInSqKm']);
+
+					countryInfo = {
+						"Continent": result['data'][0]['continent'],
+						"Capital": result['data'][0]['capital'],
+						"Languages": result['data'][0]['languages'],
+						'Population': result['data'][0]['population'],
+						'Area': result['data'][0]['areaInSqKm']
+					}
 
 					north = result['data'][0]['north'];
 			    east = result['data'][0]['east'];
@@ -85,11 +116,50 @@ var countryBorders;
 
 				if (result.status.name == "ok") {
 
-					$('#txtContinent').html(result['data']['time']);
-					$('#txtCapital').html(result['data']['gmtOffset']);
-					$('#txtLanguages').html(result['data']['gmtOffset']);
-					$('#txtPopulation').html(result['data']['sunrise']);
-					$('#txtArea').html(result['data']['sunset']);
+					countryTimeInfo = {
+						'Time': result['data']['time'],
+						'GMT Offset': result['data']['gmtOffset'],
+						'Sunrise': result['data']['sunrise'],
+						'Sunset': result['data']['sunset']
+					}
+
+				}
+
+			},
+			error: function(jqXHR, textStatus, errorThrown) {
+				console.log("Request failed");
+			}
+		});
+
+		var countryCode3 = countryCodes[countryCode2];
+		console.log(countryCode3)
+
+		$.ajax({
+			url: "libs/php/getCountryClimateInfo.php",
+			type: 'POST',
+			dataType: 'json',
+			data: {
+				country: countryCode3
+			},
+			success: function(result) {
+
+				console.log(result);
+
+				if (result.status.name == "ok") {
+
+					countryPrecipitationInfo = result['data'][0]['monthVals'];
+
+					// countryPrecipitationInfo = {
+					// 	'January': result['data'][0]['monthVals'][0],
+					// 	'February': result['data'][0]['monthVals'][1],
+					// 	'March': result['data'][0]['monthVals'][2],
+					// 	'April': result['data'][0]['monthVals'][3],
+					// 	'May': result['data'][0]['monthVals'][4],
+					// 	'June': result['data'][0]['monthVals'][5],
+					// 	'July': result['data'][0]['monthVals'][6],
+					//
+					// }
+
 				}
 
 			},
@@ -101,17 +171,82 @@ var countryBorders;
 	});
 
 	$('#showInfo').click(function() {
+		$("#infoModalBody").html("");
+
+		var selectedInfo = $('#selectInfo').val();
+		var showInfo;
+		if (selectedInfo === "general"){
+			$("#infoModalLabel").html('General Information');
+			showInfo = countryInfo;
+			createTable(showInfo);
+		} else if (selectedInfo === "precip") {
+			$("#infoModalLabel").html('Rainfall Information')
+			showInfo = countryPrecipitationInfo;
+			createTable(showInfo);
+		}	else if (selectedInfo === "climate") {
+			$("#infoModalLabel").html('Rainfall Information')
+			$("#infoModalBody").append('<canvas id="myChart" width="400" height="400"></canvas>');
+			var label = "Rainfall (mm)";
+			createGraph(label,monthsArray,countryPrecipitationInfo);
+		}	else {
+			$("#infoModalLabel").html('Time Information')
+			showInfo = countryTimeInfo;
+			createTable(showInfo);
+		}
+
 		jQuery('#exampleModal').modal('toggle');
-		console.log("Showing modal?")
 	});
 
+function createTable(showInfo) {
+	$("#infoModalBody").append('<table id="infoTable" class="table">')
+	$.each( showInfo, function( key, value ) {
+		$("#infoModalBody").append('<tr><td>' + key + ' </td><td>' + value +'</td></tr>');
+	});
+	$("#infoModalBody").append('</table>')
+}
 
-	let requestURL = '/mapping/libs/js/countries_small.json';
-	let request = new XMLHttpRequest();
-	request.open('GET', requestURL);
-	request.responseType = 'json';
-	request.send();
-	request.onload = function() {
-	  countryBorders = request.response;
-	  console.log(countryBorders);
-	}
+function createGraph(label, xAxis, yAxis) {
+	var ctx = document.getElementById('myChart');
+	var myChart = new Chart(ctx, {
+	    type: 'bar',
+	    data: {
+	        labels: xAxis,
+	        datasets: [{
+	            label: label,
+	            data: yAxis,
+	            backgroundColor: [
+	                'rgba(255, 99, 132, 0.2)',
+	                'rgba(54, 162, 235, 0.2)',
+	                'rgba(255, 206, 86, 0.2)',
+	                'rgba(75, 192, 192, 0.2)',
+	                'rgba(153, 102, 255, 0.2)',
+	                'rgba(255, 159, 64, 0.2)',
+									'rgba(255, 99, 132, 0.2)',
+	                'rgba(54, 162, 235, 0.2)',
+	                'rgba(255, 206, 86, 0.2)',
+	                'rgba(75, 192, 192, 0.2)',
+	                'rgba(153, 102, 255, 0.2)',
+	                'rgba(255, 159, 64, 0.2)',
+	            ],
+	            borderColor: [
+	                'rgba(255, 99, 132, 1)',
+	                'rgba(54, 162, 235, 1)',
+	                'rgba(255, 206, 86, 1)',
+	                'rgba(75, 192, 192, 1)',
+	                'rgba(153, 102, 255, 1)',
+	                'rgba(255, 159, 64, 1)'
+	            ],
+	            borderWidth: 1
+	        }]
+	    },
+	    options: {
+	        scales: {
+	            yAxes: [{
+	                ticks: {
+	                    beginAtZero: true
+	                }
+	            }]
+	        }
+	    }
+	});
+}
