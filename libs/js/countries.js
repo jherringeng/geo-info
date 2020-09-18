@@ -9,8 +9,9 @@ var latCentre = (north + south) / 2,
 
 
 var countryName, countryBorders, countryCodes;
-var countryInfo, countryTimeInfo, countryWikiInfo;
+var countryInfo, countryTimeInfo, countryWikiInfo, countryPrecipitationInfo, countryTemperatureInfo;
 var monthsArray = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+var myChart, rainfallLabel = "Rainfall (mm)", temperatureLabel = "Temperature (deg C)";
 
 var requestURL = '/mapping/libs/js/countries_small.json';
 var request = new XMLHttpRequest();
@@ -166,16 +167,28 @@ request.onload = function() {
 
 					countryPrecipitationInfo = result['data'][0]['monthVals'];
 
-					// countryPrecipitationInfo = {
-					// 	'January': result['data'][0]['monthVals'][0],
-					// 	'February': result['data'][0]['monthVals'][1],
-					// 	'March': result['data'][0]['monthVals'][2],
-					// 	'April': result['data'][0]['monthVals'][3],
-					// 	'May': result['data'][0]['monthVals'][4],
-					// 	'June': result['data'][0]['monthVals'][5],
-					// 	'July': result['data'][0]['monthVals'][6],
-					//
-					// }
+				}
+
+			},
+			error: function(jqXHR, textStatus, errorThrown) {
+				console.log("Request failed");
+			}
+		});
+
+		$.ajax({
+			url: "libs/php/getCountryTemperatureInfo.php",
+			type: 'POST',
+			dataType: 'json',
+			data: {
+				country: countryCode3
+			},
+			success: function(result) {
+
+				console.log(result);
+
+				if (result.status.name == "ok") {
+
+					countryTemperatureInfo = result['data'][0]['monthVals'];
 
 				}
 
@@ -195,19 +208,29 @@ request.onload = function() {
 			$("#infoModalLabel").html(countryName + ' General Information');
 			createTable(countryInfo);
 		}
-		else if (selectedInfo === "precip") {
-			$("#infoModalLabel").html(countryName + ' Rainfall Information')
-			createTable(countryPrecipitationInfo);
+		else if (selectedInfo === "climate") {
+			$("#infoModalLabel").html(countryName + ' Climate Information');
+			$("#infoModalBody").append('<input type="radio" id="temp" name="climateGraph" value="temp" class="mr-2" checked><label for="temp">Temperature</label>');
+			$("#infoModalBody").append('<input type="radio" id="rain" name="climateGraph" value="rain" class="mr-2"><label for="rain">Rainfall</label><br>');
+			$("#infoModalBody").append('<canvas id="myChart" width="400" height="400"></canvas>');
+			var label = "Rainfall (mm)";
+			createGraph(temperatureLabel,monthsArray,countryTemperatureInfo);
 		}
 		else if (selectedInfo === "wiki") {
 			$("#infoModalLabel").html(countryName + ' Wikipedia Information')
 			createWikiInfo(countryWikiInfo);
 		}
-		else if (selectedInfo === "climate") {
+		else if (selectedInfo === "precip") {
 			$("#infoModalLabel").html(countryName + ' Rainfall')
 			$("#infoModalBody").append('<canvas id="myChart" width="400" height="400"></canvas>');
 			var label = "Rainfall (mm)";
 			createGraph(label,monthsArray,countryPrecipitationInfo);
+		}
+		else if (selectedInfo === "temp") {
+			$("#infoModalLabel").html(countryName + ' Temperature')
+			$("#infoModalBody").append('<canvas id="myChart" width="400" height="400"></canvas>');
+			var label = "Temperature (deg C)";
+			createGraph(label,monthsArray,countryTemperatureInfo);
 		}
 		else {
 			$("#infoModalLabel").html('Time Information')
@@ -232,9 +255,23 @@ function createWikiInfo(wikiInfo) {
 	$("#infoModalBody").append('<a href="' + wikiInfo['Wiki URL'] + '" target="_blank" class="btn btn-primary text-center">Read More</a>');
 }
 
+$('body').on('change', 'input[name=climateGraph]:radio', function() {
+	myChart.destroy();
+  switch ($(this).val()) {
+    case 'temp':
+			var label = "Temperature (deg C)";
+			createGraph(label,monthsArray,countryTemperatureInfo);
+      break;
+    case 'rain':
+			var label = "Rainfall (mm)";
+			createGraph(label,monthsArray,countryPrecipitationInfo);
+      break;
+  }
+});
+
 function createGraph(label, xAxis, yAxis) {
 	var ctx = document.getElementById('myChart');
-	var myChart = new Chart(ctx, {
+	myChart = new Chart(ctx, {
 	    type: 'bar',
 	    data: {
 	        labels: xAxis,
