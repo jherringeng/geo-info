@@ -7,8 +7,9 @@ var latCentre = (north + south) / 2,
 		lngCentre = (east + west) / 2,
 		scaling = 5;
 
-var countryBorders, countryCodes;
-var countryInfo, countryTimeInfo;
+
+var countryName, countryBorders, countryCodes;
+var countryInfo, countryTimeInfo, countryWikiInfo;
 var monthsArray = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
 var requestURL = '/mapping/libs/js/countries_small.json';
@@ -40,19 +41,10 @@ request.onload = function() {
 	});
 
 
-
+	// Gets country information and moves map
 	$('#btnRun').click(function() {
 
 		var countryCode2 = $('#selCountry').val();
-
-		// requestURL = '/mapping/libs/js/country_codes.json';
-		// request.open('GET', requestURL);
-		// request.responseType = 'json';
-		// request.send();
-		// request.onload = function() {
-		//   countryCodes = request.response;
-		//   console.log(countryCodes);
-		// }
 
 		$.ajax({
 			url: "libs/php/getCountryInfo.php",
@@ -68,13 +60,10 @@ request.onload = function() {
 
 				if (result.status.name == "ok") {
 
-					$('#txtContinent').html(result['data'][0]['continent']);
-					$('#txtCapital').html(result['data'][0]['capital']);
-					$('#txtLanguages').html(result['data'][0]['languages']);
-					$('#txtPopulation').html(result['data'][0]['population']);
-					$('#txtArea').html(result['data'][0]['areaInSqKm']);
+					countryName = result['data'][0]['countryName'];
 
 					countryInfo = {
+						"Name": result['data'][0]['countryName'],
 						"Continent": result['data'][0]['continent'],
 						"Capital": result['data'][0]['capital'],
 						"Languages": result['data'][0]['languages'],
@@ -131,6 +120,34 @@ request.onload = function() {
 			}
 		});
 
+		$.ajax({
+			url: "libs/php/getCountryWikiInfo.php",
+			type: 'POST',
+			dataType: 'json',
+			data: {
+				countryName: countryName
+			},
+			success: function(result) {
+
+				console.log(result);
+
+				if (result.status.name == "ok") {
+
+					countryWikiInfo = {
+						'Name': result['data'][0]['title'],
+						'Summary': result['data'][0]['summary'],
+						'Wiki URL': "https://" + result['data'][0]['wikipediaUrl'],
+						'Thumbnail': result['data'][0]['thumbnailImg']
+					}
+
+				}
+
+			},
+			error: function(jqXHR, textStatus, errorThrown) {
+				console.log("Request failed:" + textStatus)
+			}
+		});
+
 		var countryCode3 = countryCodes[countryCode2];
 		console.log(countryCode3)
 
@@ -174,24 +191,27 @@ request.onload = function() {
 		$("#infoModalBody").html("");
 
 		var selectedInfo = $('#selectInfo').val();
-		var showInfo;
 		if (selectedInfo === "general"){
-			$("#infoModalLabel").html('General Information');
-			showInfo = countryInfo;
-			createTable(showInfo);
-		} else if (selectedInfo === "precip") {
-			$("#infoModalLabel").html('Rainfall Information')
-			showInfo = countryPrecipitationInfo;
-			createTable(showInfo);
-		}	else if (selectedInfo === "climate") {
-			$("#infoModalLabel").html('Rainfall Information')
+			$("#infoModalLabel").html(countryName + ' General Information');
+			createTable(countryInfo);
+		}
+		else if (selectedInfo === "precip") {
+			$("#infoModalLabel").html(countryName + ' Rainfall Information')
+			createTable(countryPrecipitationInfo);
+		}
+		else if (selectedInfo === "wiki") {
+			$("#infoModalLabel").html(countryName + ' Wikipedia Information')
+			createWikiInfo(countryWikiInfo);
+		}
+		else if (selectedInfo === "climate") {
+			$("#infoModalLabel").html(countryName + ' Rainfall')
 			$("#infoModalBody").append('<canvas id="myChart" width="400" height="400"></canvas>');
 			var label = "Rainfall (mm)";
 			createGraph(label,monthsArray,countryPrecipitationInfo);
-		}	else {
+		}
+		else {
 			$("#infoModalLabel").html('Time Information')
-			showInfo = countryTimeInfo;
-			createTable(showInfo);
+			createTable(countryTimeInfo);
 		}
 
 		jQuery('#exampleModal').modal('toggle');
@@ -203,6 +223,13 @@ function createTable(showInfo) {
 		$("#infoModalBody").append('<tr><td>' + key + ' </td><td>' + value +'</td></tr>');
 	});
 	$("#infoModalBody").append('</table>')
+}
+
+function createWikiInfo(wikiInfo) {
+	console.log(wikiInfo);
+	$("#infoModalBody").append('<imag src="' + wikiInfo['Thumbnail'] + '" class="float-left">');
+	$("#infoModalBody").append('<p>' + wikiInfo['Summary'] + '</p>');
+	$("#infoModalBody").append('<a href="' + wikiInfo['Wiki URL'] + '" target="_blank" class="btn btn-primary text-center">Read More</a>');
 }
 
 function createGraph(label, xAxis, yAxis) {

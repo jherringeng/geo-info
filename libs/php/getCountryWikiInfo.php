@@ -1,8 +1,12 @@
 <?php
 
+	// Get country wikipedia information
 	$executionStartTime = microtime(true) / 1000;
 
-	$url='http://api.geonames.org/countryInfoJSON?formatted=true&lang=en&country=' . $_REQUEST['country'] . '&username=jherring_eng&style=full';
+	str_replace(' ', '-', $string)
+	$countryName = str_replace(' ', '+', $_REQUEST['countryName']);
+	$url = 'http://api.geonames.org/wikipediaSearchJSON?formatted=true&q=' . $countryName . '&maxRows=10&username=jherring_eng&style=full';
+	// $url = 'http://api.geonames.org/wikipediaSearchJSON?formatted=true&q=united+states&maxRows=10&username=jherring_eng&style=full';
 
 	$ch = curl_init();
 	curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
