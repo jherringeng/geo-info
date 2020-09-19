@@ -10,6 +10,7 @@ var latCentre = (north + south) / 2,
 
 var countryName, countryBorders, countryCodes;
 var countryInfo, countryTimeInfo, countryWikiInfo, countryPrecipitationInfo, countryTemperatureInfo;
+var countryGDPInfo = {}, countryGDPPersonInfo = {}, countryGDPGrowthInfo = {};
 var monthsArray = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 var myChart, rainfallLabel = "Rainfall (mm)", temperatureLabel = "Temperature (deg C)";
 
@@ -198,6 +199,84 @@ request.onload = function() {
 			}
 		});
 
+		$.ajax({
+			url: "libs/php/getCountryGDPInfo.php",
+			type: 'POST',
+			dataType: 'json',
+			data: {
+				country: countryCode2
+			},
+			success: function(result) {
+
+				console.log(result);
+
+				if (result.status.name == "ok") {
+
+					var rawCountryGDPInfo = result['data'][1];
+					for (var i = 1; i < 11; i++) {
+						countryGDPInfo[rawCountryGDPInfo[i]["date"]] = rawCountryGDPInfo[i]["value"];
+					}
+					console.log(countryGDPInfo);
+				}
+
+			},
+			error: function(jqXHR, textStatus, errorThrown) {
+				console.log("Request failed");
+			}
+		});
+
+		$.ajax({
+			url: "libs/php/getCountryGDPPersonInfo.php",
+			type: 'POST',
+			dataType: 'json',
+			data: {
+				country: countryCode2
+			},
+			success: function(result) {
+
+				console.log(result);
+
+				if (result.status.name == "ok") {
+
+					var rawCountryGDPInfo = result['data'][1];
+					for (var i = 1; i < 11; i++) {
+						countryGDPPersonInfo[rawCountryGDPInfo[i]["date"]] = rawCountryGDPInfo[i]["value"];
+					}
+					console.log(countryGDPPersonInfo);
+				}
+
+			},
+			error: function(jqXHR, textStatus, errorThrown) {
+				console.log("Request failed");
+			}
+		});
+
+		$.ajax({
+			url: "libs/php/getCountryGDPGrowthInfo.php",
+			type: 'POST',
+			dataType: 'json',
+			data: {
+				country: countryCode2
+			},
+			success: function(result) {
+
+				console.log(result);
+
+				if (result.status.name == "ok") {
+
+					var rawCountryGDPInfo = result['data'][1];
+					for (var i = 1; i < 11; i++) {
+						countryGDPGrowthInfo[rawCountryGDPInfo[i]["date"]] = rawCountryGDPInfo[i]["value"];
+					}
+					console.log(countryGDPGrowthInfo);
+				}
+
+			},
+			error: function(jqXHR, textStatus, errorThrown) {
+				console.log("Request failed");
+			}
+		});
+
 	});
 
 	$('#showInfo').click(function() {
@@ -209,12 +288,27 @@ request.onload = function() {
 			createTable(countryInfo);
 		}
 		else if (selectedInfo === "climate") {
-			$("#infoModalLabel").html(countryName + ' Climate Information');
-			$("#infoModalBody").append('<input type="radio" id="temp" name="climateGraph" value="temp" class="mr-2" checked><label for="temp">Temperature</label>');
-			$("#infoModalBody").append('<input type="radio" id="rain" name="climateGraph" value="rain" class="mr-2"><label for="rain">Rainfall</label><br>');
-			$("#infoModalBody").append('<canvas id="myChart" width="400" height="400"></canvas>');
-			var label = "Rainfall (mm)";
+			var chartTitle = 'Climate Information';
+			var chartNameId = {
+				"Temperature": "temp",
+				"Rainfall": "rain"
+			}
+			createChartArea(chartTitle, chartNameId);
+			// $("#infoModalLabel").html(countryName + ' Climate Information');
+			// $("#infoModalBody").append('<input type="radio" id="temp" name="graphSelector" value="temp" class="mr-2" checked><label for="temp" class="mr-2">Temperature</label>');
+			// $("#infoModalBody").append('<input type="radio" id="rain" name="graphSelector" value="rain" class="mr-2"><label for="rain" class="mr-2">Rainfall</label><br>');
+			// $("#infoModalBody").append('<canvas id="myChart" width="400" height="400"></canvas>');
 			createGraph(temperatureLabel,monthsArray,countryTemperatureInfo);
+		}
+		else if (selectedInfo === "economy") {
+			var chartTitle = 'Economic Information';
+			var chartNameId = {
+				"GDP": "gdp",
+				"GDP per Person": "gdpPerson",
+				"GDP Growth": "gdpGrowth"
+			}
+			createChartArea(chartTitle, chartNameId);
+			createGraph("GDP per year ($)",Object.keys(countryGDPInfo),Object.values(countryGDPInfo));
 		}
 		else if (selectedInfo === "wiki") {
 			$("#infoModalLabel").html(countryName + ' Wikipedia Information')
@@ -223,8 +317,7 @@ request.onload = function() {
 		else if (selectedInfo === "precip") {
 			$("#infoModalLabel").html(countryName + ' Rainfall')
 			$("#infoModalBody").append('<canvas id="myChart" width="400" height="400"></canvas>');
-			var label = "Rainfall (mm)";
-			createGraph(label,monthsArray,countryPrecipitationInfo);
+			createGraph(rainfallLabel,monthsArray,countryPrecipitationInfo);
 		}
 		else if (selectedInfo === "temp") {
 			$("#infoModalLabel").html(countryName + ' Temperature')
@@ -255,17 +348,33 @@ function createWikiInfo(wikiInfo) {
 	$("#infoModalBody").append('<a href="' + wikiInfo['Wiki URL'] + '" target="_blank" class="btn btn-primary text-center">Read More</a>');
 }
 
-$('body').on('change', 'input[name=climateGraph]:radio', function() {
+function createChartArea (chartTitle, chartNameId) {
+	$("#infoModalLabel").html(countryName + ' ' + chartTitle);
+	$.each( chartNameId, function( key, value ) {
+		$("#infoModalBody").append('<input type="radio" id="' + value + '" name="graphSelector" value="' + value + '" class="mr-2" checked><label for="' + value + '" class="mr-2">' + key + '</label>');
+	});
+	$("#infoModalBody").append('<canvas id="myChart" width="400" height="400"></canvas>');
+}
+
+$('body').on('change', 'input[name=graphSelector]:radio', function() {
 	myChart.destroy();
   switch ($(this).val()) {
     case 'temp':
-			var label = "Temperature (deg C)";
-			createGraph(label,monthsArray,countryTemperatureInfo);
+			createGraph(temperatureLabel,monthsArray,countryTemperatureInfo);
       break;
     case 'rain':
-			var label = "Rainfall (mm)";
-			createGraph(label,monthsArray,countryPrecipitationInfo);
+			createGraph(rainfallLabel,monthsArray,countryPrecipitationInfo);
       break;
+		case 'gdp':
+			createGraph("GDP per year ($)",Object.keys(countryGDPInfo),Object.values(countryGDPInfo));
+      break;
+		case 'gdpPerson':
+			createGraph("GDP per Person per year ($)",Object.keys(countryGDPPersonInfo),Object.values(countryGDPPersonInfo));
+      break;
+		case 'gdpGrowth':
+			createGraph("GDP Growth per year (%)",Object.keys(countryGDPGrowthInfo),Object.values(countryGDPGrowthInfo));
+      break;
+
   }
 });
 
