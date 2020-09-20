@@ -11,6 +11,7 @@ var latCentre = (north + south) / 2,
 var countryName, countryBorders, countryCodes;
 var countryInfo, countryTimeInfo, countryWikiInfo, countryPrecipitationInfo, countryTemperatureInfo;
 var countryGDPInfo = {}, countryGDPPersonInfo = {}, countryGDPGrowthInfo = {};
+var earthquakesArray = [];
 var monthsArray = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 var myChart, rainfallLabel = "Rainfall (mm)", temperatureLabel = "Temperature (deg C)";
 
@@ -274,6 +275,45 @@ request.onload = function() {
 			},
 			error: function(jqXHR, textStatus, errorThrown) {
 				console.log("Request failed");
+			}
+		});
+
+		$.ajax({
+			url: "libs/php/getEarthQuakeInfo.php",
+			type: 'POST',
+			dataType: 'json',
+			data: {
+				north: Math.round(north),
+				east: Math.round(east),
+				south: Math.round(south),
+				west: Math.round(west)
+			},
+			success: function(result) {
+
+				console.log(result);
+
+				if (result.status.name == "ok") {
+
+					result['data'].forEach(function(item) {
+						var lat = item['lat'], lng = item['lng'];
+						var radius = item['magnitude'] * 10000;
+						var circle = L.circle([lat, lng], {
+						    color: 'red',
+						    fillColor: '#f03',
+						    fillOpacity: 0.5,
+						    radius: radius
+						}) // .addTo(mymap);
+						circle.bindPopup("Magnitude: " + item['magnitude'] + ", Lat: " + lat + ", Lng: " + lng + ", Datetime: " + item['datetime']);
+						earthquakesArray.push(circle);
+					})
+					earthquakesArray.forEach(function(item) {
+						item.addTo(mymap);
+					})
+				}
+
+			},
+			error: function(jqXHR, textStatus, errorThrown) {
+				console.log("Request failed: " + textStatus);
 			}
 		});
 
