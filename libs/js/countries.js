@@ -1,3 +1,7 @@
+// import ajaxCalls from './ajax-calls.js';
+
+var myMap;
+
 var north = 59.3607741849963,
 		east = 1.7689121033873,
 		south = 49.9028622252397,
@@ -86,6 +90,8 @@ request.onload = function() {
 						southEast = L.latLng(south, east),
 						bounds = L.latLngBounds(northWest, southEast);
 					mymap.flyToBounds(bounds);
+
+					earthquakesArray = ajaxCalls.getEarthQuakeInfo(north, east, south, west);
 				}
 
 			},
@@ -382,7 +388,6 @@ function createTable(showInfo) {
 }
 
 function createWikiInfo(wikiInfo) {
-	console.log(wikiInfo);
 	$("#infoModalBody").append('<imag src="' + wikiInfo['Thumbnail'] + '" class="float-left">');
 	$("#infoModalBody").append('<p>' + wikiInfo['Summary'] + '</p>');
 	$("#infoModalBody").append('<a href="' + wikiInfo['Wiki URL'] + '" target="_blank" class="btn btn-primary text-center">Read More</a>');
@@ -416,6 +421,29 @@ $('body').on('change', 'input[name=graphSelector]:radio', function() {
       break;
 
   }
+});
+
+$('#showMapOptions').click(function() {
+	$("#infoModalBody").html("");
+	$("#infoModalLabel").html(countryName + ' Map Options');
+	$("#infoModalBody").append('<label for="mapSelector">Show Earthquakes</label><br>');
+	$("#infoModalBody").append('<input type="checkbox" id="earthquakes" name="mapSelector" value="earthquakes">');
+	jQuery('#exampleModal').modal('toggle');
+});
+
+$('body').on('change', 'input[name=mapSelector]:checkbox', function() {
+	switch ($(this).attr('id')) {
+		case 'earthquakes':
+			if ($(this).is(':checked')) {
+				earthquakesArray.forEach(function(item) {
+					item.addTo(mymap);
+				})
+			} else {
+				earthquakesArray.forEach(function(item) {
+					item.remove();
+				})
+			}
+	}
 });
 
 function createGraph(label, xAxis, yAxis) {
