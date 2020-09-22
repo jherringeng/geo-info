@@ -10,7 +10,7 @@ var latCentre = (north + south) / 2, lngCentre = (east + west) / 2, scaling = 5;
 var countryName, countryBorders, countryCodes;
 var countryInfo, countryTimeInfo, countryWikiInfo, countryPrecipitationInfo, countryTemperatureInfo;
 var countryGDPInfo = {}, countryGDPPersonInfo = {}, countryGDPGrowthInfo = {};
-var earthquakesArray = [];
+var earthquakesArray = [], majorCitiesArray = [];
 var monthsArray = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 var myChart, rainfallLabel = "Rainfall (mm)", temperatureLabel = "Temperature (deg C)";
 
@@ -22,9 +22,7 @@ request.responseType = 'json';
 request.send();
 request.onload = function() {
 	countryBorders = request.response[0];
-	console.log(countryBorders);
 	countryCodes = request.response[1];
-	console.log(countryCodes);
 	countryLangs = request.response[2];
 	console.log(countryLangs);
 }
@@ -61,8 +59,6 @@ $('#btnRun').click(function() {
 		},
 		success: function(result) {
 
-			console.log(result);
-
 			if (result.status.name == "ok") {
 
 				countryName = result['data'][0]['countryName'];
@@ -91,7 +87,6 @@ $('#btnRun').click(function() {
 
 				// Pass updated NESW data to get earthquake data
 				getEarthQuakeInfo(north, east, south, west, earthquakesArray);
-				console.log(earthquakesArray)
 
 			}
 
@@ -110,8 +105,6 @@ $('#btnRun').click(function() {
 			lng: lngCentre
 		},
 		success: function(result) {
-
-			console.log(result);
 
 			if (result.status.name == "ok") {
 
@@ -159,7 +152,6 @@ $('#btnRun').click(function() {
 	});
 
 	var countryCode3 = countryCodes[countryCode2];
-	console.log(countryCode3)
 
 	$.ajax({
 		url: "libs/php/getCountryClimateInfo.php",
@@ -169,8 +161,6 @@ $('#btnRun').click(function() {
 			country: countryCode3
 		},
 		success: function(result) {
-
-			console.log(result);
 
 			if (result.status.name == "ok") {
 
@@ -193,8 +183,6 @@ $('#btnRun').click(function() {
 		},
 		success: function(result) {
 
-			console.log(result);
-
 			if (result.status.name == "ok") {
 
 				countryTemperatureInfo = result['data'][0]['monthVals'];
@@ -216,15 +204,12 @@ $('#btnRun').click(function() {
 		},
 		success: function(result) {
 
-			console.log(result);
-
 			if (result.status.name == "ok") {
 
 				var rawCountryGDPInfo = result['data'][1];
 				for (var i = 1; i < 11; i++) {
 					countryGDPInfo[rawCountryGDPInfo[i]["date"]] = rawCountryGDPInfo[i]["value"];
 				}
-				console.log(countryGDPInfo);
 			}
 
 		},
@@ -242,15 +227,12 @@ $('#btnRun').click(function() {
 		},
 		success: function(result) {
 
-			console.log(result);
-
 			if (result.status.name == "ok") {
 
 				var rawCountryGDPInfo = result['data'][1];
 				for (var i = 1; i < 11; i++) {
 					countryGDPPersonInfo[rawCountryGDPInfo[i]["date"]] = rawCountryGDPInfo[i]["value"];
 				}
-				console.log(countryGDPPersonInfo);
 			}
 
 		},
@@ -268,20 +250,41 @@ $('#btnRun').click(function() {
 		},
 		success: function(result) {
 
-			console.log(result);
-
 			if (result.status.name == "ok") {
 
 				var rawCountryGDPInfo = result['data'][1];
 				for (var i = 1; i < 11; i++) {
 					countryGDPGrowthInfo[rawCountryGDPInfo[i]["date"]] = rawCountryGDPInfo[i]["value"];
 				}
-				console.log(countryGDPGrowthInfo);
 			}
 
 		},
 		error: function(jqXHR, textStatus, errorThrown) {
 			console.log("Request failed");
+		}
+	});
+
+	$.ajax({
+		url: "libs/php/getMajorCitiesInfo.php",
+		type: 'POST',
+		dataType: 'json',
+		data: {
+			country: countryCode2
+		},
+		success: function(result) {
+
+			console.log(result);
+
+			result['cities'].forEach(function(item) {
+				var lat = item['latitude'], lng = item['longitude'];
+				var marker = L.marker([lat, lng])
+				marker.bindPopup("Name: " + item['name'] + ", Population: " + item['population'] + ", Lat: " + lat + ", Lng: " + lng );
+				majorCitiesArray.push(marker);
+			})
+
+		},
+		error: function(jqXHR, textStatus, errorThrown) {
+			console.log("Request failed: " + textStatus);
 		}
 	});
 
@@ -389,15 +392,18 @@ $('body').on('change', 'input[name=graphSelector]:radio', function() {
 $('#showMapOptions').click(function() {
 	$("#infoModalBody").html("");
 	$("#infoModalLabel").html(countryName + ' Map Options');
-	$("#infoModalBody").append('<label for="mapSelector">Show Earthquakes</label><br>');
-	$("#infoModalBody").append('<input type="checkbox" id="earthquakes" name="mapSelector" value="earthquakes">');
+	$("#infoModalBody").append('<label for="earthquakes">Show Earthquakes</label>');
+	$("#infoModalBody").append('<input type="checkbox" id="earthquakes" name="mapSelector" value="earthquakes"><br>');
+	$("#infoModalBody").append('<label for="cities">Show Major Cities</label>');
+	$("#infoModalBody").append('<input type="checkbox" id="cities" name="mapSelector" value="cities"><br>');
 	jQuery('#exampleModal').modal('toggle');
 });
 
 $('body').on('change', 'input[name=mapSelector]:checkbox', function() {
 	switch ($(this).attr('id')) {
 		case 'earthquakes':
-			if ($(this).is(':checked')) {
+			console.log(earthquakesArray)
+			if ($('#earthquakes').is(':checked')) {
 				earthquakesArray.forEach(function(item) {
 					item.addTo(mymap);
 				})
@@ -406,6 +412,18 @@ $('body').on('change', 'input[name=mapSelector]:checkbox', function() {
 					item.remove();
 				})
 			}
+			break;
+		case 'cities':
+			if ($('#cities').is(':checked')) {
+				majorCitiesArray.forEach(function(item) {
+					item.addTo(mymap);
+				})
+			} else {
+				majorCitiesArray.forEach(function(item) {
+					item.remove();
+				})
+			}
+			break;
 	}
 });
 
@@ -458,7 +476,7 @@ function createGraph(label, xAxis, yAxis) {
 function getEarthQuakeInfo(north, east, south, west, earthquakesArray) {
 
 		// Resets earthquake array to not display previous country again
-		earthquakesArray = [];
+		// earthquakesArray = [];
 
 		$.ajax({
 			url: "libs/php/getEarthQuakeInfo.php",
@@ -488,6 +506,8 @@ function getEarthQuakeInfo(north, east, south, west, earthquakesArray) {
 						circle.bindPopup("Magnitude: " + item['magnitude'] + ", Lat: " + lat + ", Lng: " + lng + ", Datetime: " + item['datetime']);
 						earthquakesArray.push(circle);
 					})
+
+					console.log(earthquakesArray)
 
 				}
 
