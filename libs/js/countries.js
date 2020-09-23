@@ -10,6 +10,7 @@ var latCentre = (north + south) / 2, lngCentre = (east + west) / 2, scaling = 5;
 var countryName, countryBorders, countryCodes;
 var countryInfo, countryTimeInfo, countryWikiInfo, countryPrecipitationInfo, countryTemperatureInfo;
 var countryGDPInfo = {}, countryGDPPersonInfo = {}, countryGDPGrowthInfo = {};
+var countryPopDemo = {}, countryPopDemoFemale = {}, countryPopDemoMale = {};
 var earthquakesArray = [], majorCitiesArray = [];
 var monthsArray = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 var myChart, rainfallLabel = "Rainfall (mm)", temperatureLabel = "Temperature (deg C)";
@@ -47,6 +48,8 @@ $( document ).ready(function() {
 // Gets country information and moves map
 $('#btnRun').click(function() {
 
+	removeMapMarkers();
+	resetArraysObjects();
 	var countryCode2 = $('#selCountry').val();
 
 	$.ajax({
@@ -63,19 +66,14 @@ $('#btnRun').click(function() {
 
 				countryName = result['data'][0]['countryName'];
 
-				countryInfo = {
-					"Name": result['data'][0]['countryName'],
-					"Continent": result['data'][0]['continent'],
-					"Capital": result['data'][0]['capital'],
-					"Languages": result['data'][0]['languages'],
-					'Population': result['data'][0]['population'],
-					'Area': result['data'][0]['areaInSqKm']
-				}
-
 				north = result['data'][0]['north'];
 		    east = result['data'][0]['east'];
 		    south = result['data'][0]['south'];
 		    west = result['data'][0]['west'];
+
+				// Contains ajax call for updated variables
+				getEarthQuakeInfo();
+				getWikiInfo();
 
 				latCentre = (north + south) / 2;
 				lngCentre = (east + west) / 2;
@@ -85,8 +83,17 @@ $('#btnRun').click(function() {
 					bounds = L.latLngBounds(northWest, southEast);
 				mymap.flyToBounds(bounds);
 
-				// Pass updated NESW data to get earthquake data
-				getEarthQuakeInfo(north, east, south, west, earthquakesArray);
+				// Processes language codes to names
+				var langString = processLangString(result['data'][0]['languages']);
+
+				countryInfo = {
+					"Name": result['data'][0]['countryName'],
+					"Continent": result['data'][0]['continent'],
+					"Capital": result['data'][0]['capital'],
+					"Languages": langString,
+					'Population': result['data'][0]['population'],
+					'Area': result['data'][0]['areaInSqKm']
+				}
 
 			}
 
@@ -111,6 +118,7 @@ $('#btnRun').click(function() {
 				countryTimeInfo = {
 					'Time': result['data']['time'],
 					'GMT Offset': result['data']['gmtOffset'],
+					'Timezone': result['data']['timezoneId'],
 					'Sunrise': result['data']['sunrise'],
 					'Sunset': result['data']['sunset']
 				}
@@ -120,34 +128,6 @@ $('#btnRun').click(function() {
 		},
 		error: function(jqXHR, textStatus, errorThrown) {
 			console.log("Request failed");
-		}
-	});
-
-	$.ajax({
-		url: "libs/php/getCountryWikiInfo.php",
-		type: 'POST',
-		dataType: 'json',
-		data: {
-			countryName: countryName
-		},
-		success: function(result) {
-
-			console.log(result);
-
-			if (result.status.name == "ok") {
-
-				countryWikiInfo = {
-					'Name': result['data'][0]['title'],
-					'Summary': result['data'][0]['summary'],
-					'Wiki URL': "https://" + result['data'][0]['wikipediaUrl'],
-					'Thumbnail': result['data'][0]['thumbnailImg']
-				}
-
-			}
-
-		},
-		error: function(jqXHR, textStatus, errorThrown) {
-			console.log("Request failed:" + textStatus)
 		}
 	});
 
@@ -288,13 +268,44 @@ $('#btnRun').click(function() {
 		}
 	});
 
+	$.ajax({
+		url: "libs/php/getCountryDemoCovidInfo.php",
+		type: 'POST',
+		dataType: 'json',
+		data: {
+			country: countryCode2
+		},
+		success: function(result) {
+
+			console.log(result);
+
+			try {
+				let firstKey = Object.keys(result['data'])[0];
+				result['data'][firstKey]['CasebyAgeSex'].forEach(function(item) {
+					countryPopDemo[item['age_group']] = parseInt(item['populationin1000sF']) + parseInt(item['populationin1000sM']);
+					countryPopDemoMale[item['age_group']] = parseInt(item['populationin1000sM']);
+					countryPopDemoFemale[item['age_group']] = parseInt(item['populationin1000sF']);
+				});
+			}
+			catch(e) {
+				console.log(e.message);
+			}
+
+		},
+		error: function(jqXHR, textStatus, errorThrown) {
+			console.log("Request failed: " + textStatus);
+		}
+	});
+
 });
 
 // Sets country information and format for the modal
 $('#showInfo').click(function() {
 	$("#infoModalBody").html("");
 
+	// Gets value of #selectInfo to be passed to if-else statements (change to switch-case?)
 	var selectedInfo = $('#selectInfo').val();
+
 	if (selectedInfo === "general"){
 		$("#infoModalLabel").html(countryName + ' General Information');
 		createTable(countryInfo);
@@ -306,10 +317,6 @@ $('#showInfo').click(function() {
 			"Rainfall": "rain"
 		}
 		createChartArea(chartTitle, chartNameId);
-		// $("#infoModalLabel").html(countryName + ' Climate Information');
-		// $("#infoModalBody").append('<input type="radio" id="temp" name="graphSelector" value="temp" class="mr-2" checked><label for="temp" class="mr-2">Temperature</label>');
-		// $("#infoModalBody").append('<input type="radio" id="rain" name="graphSelector" value="rain" class="mr-2"><label for="rain" class="mr-2">Rainfall</label><br>');
-		// $("#infoModalBody").append('<canvas id="myChart" width="400" height="400"></canvas>');
 		createGraph(temperatureLabel,monthsArray,countryTemperatureInfo);
 	}
 	else if (selectedInfo === "economy") {
@@ -322,20 +329,25 @@ $('#showInfo').click(function() {
 		createChartArea(chartTitle, chartNameId);
 		createGraph("GDP per year ($)",Object.keys(countryGDPInfo),Object.values(countryGDPInfo));
 	}
+	else if (selectedInfo === "demographics") {
+		if (countryPopDemo === {}) {
+			$("#infoModalLabel").html(countryName + ' Demographic Information');
+
+		}
+		else {
+			var chartTitle = 'Demographic Information';
+			var chartNameId = {
+				"People by Age": "demoPeople",
+				"Males by Age": "demoMales",
+				"Females by Age": "demoFemales"
+			}
+			createChartArea(chartTitle, chartNameId);
+			createGraph("People in Age Ranges (millions)",Object.keys(countryPopDemo),Object.values(countryPopDemo));
+		}
+	}
 	else if (selectedInfo === "wiki") {
 		$("#infoModalLabel").html(countryName + ' Wikipedia Information')
 		createWikiInfo(countryWikiInfo);
-	}
-	else if (selectedInfo === "precip") {
-		$("#infoModalLabel").html(countryName + ' Rainfall')
-		$("#infoModalBody").append('<canvas id="myChart" width="400" height="400"></canvas>');
-		createGraph(rainfallLabel,monthsArray,countryPrecipitationInfo);
-	}
-	else if (selectedInfo === "temp") {
-		$("#infoModalLabel").html(countryName + ' Temperature')
-		$("#infoModalBody").append('<canvas id="myChart" width="400" height="400"></canvas>');
-		var label = "Temperature (deg C)";
-		createGraph(label,monthsArray,countryTemperatureInfo);
 	}
 	else {
 		$("#infoModalLabel").html('Time Information')
@@ -344,6 +356,10 @@ $('#showInfo').click(function() {
 
 	jQuery('#exampleModal').modal('toggle');
 });
+
+function createInfoNotAvailable(info) {
+	$("#infoModalBody").append('Sorry, ' + info + ' is not available for this country.');
+}
 
 function createTable(showInfo) {
 	$("#infoModalBody").append('<table id="infoTable" class="table">')
@@ -354,19 +370,23 @@ function createTable(showInfo) {
 }
 
 function createWikiInfo(wikiInfo) {
-	$("#infoModalBody").append('<imag src="' + wikiInfo['Thumbnail'] + '" class="float-left">');
+	$("#infoModalBody").append('<img src="' + wikiInfo['Thumbnail'] + '" class="float-left">');
 	$("#infoModalBody").append('<p>' + wikiInfo['Summary'] + '</p>');
 	$("#infoModalBody").append('<a href="' + wikiInfo['Wiki URL'] + '" target="_blank" class="btn btn-primary text-center">Read More</a>');
 }
 
+// Creates chart area with chartTitle and object passed by chartNameId. Radiobuttons and labels create through chartNameId
 function createChartArea (chartTitle, chartNameId) {
 	$("#infoModalLabel").html(countryName + ' ' + chartTitle);
 	$.each( chartNameId, function( key, value ) {
-		$("#infoModalBody").append('<input type="radio" id="' + value + '" name="graphSelector" value="' + value + '" class="mr-2" checked><label for="' + value + '" class="mr-2">' + key + '</label>');
+		$("#infoModalBody").append('<div><input type="radio" id="' + value + '" name="graphSelector" value="' + value + '" class="mr-2"><label for="' + value + '" class="mr-2">' + key + '</label></div>');
 	});
+	var ids = Object.values(chartNameId);
+	$("#" + ids[0]).prop( "checked", true );
 	$("#infoModalBody").append('<canvas id="myChart" width="400" height="400"></canvas>');
 }
 
+// Changes chart and info on change of radiobuttons created in createChartArea()
 $('body').on('change', 'input[name=graphSelector]:radio', function() {
 	myChart.destroy();
   switch ($(this).val()) {
@@ -385,10 +405,20 @@ $('body').on('change', 'input[name=graphSelector]:radio', function() {
 		case 'gdpGrowth':
 			createGraph("GDP Growth per year (%)",Object.keys(countryGDPGrowthInfo),Object.values(countryGDPGrowthInfo));
       break;
+		case 'demoPeople':
+			createGraph("People by Age (millions)",Object.keys(countryPopDemo),Object.values(countryPopDemo));
+      break;
+		case 'demoFemales':
+			createGraph("Females by Age (millions)",Object.keys(countryPopDemoFemale),Object.values(countryPopDemoFemale));
+      break;
+		case 'demoMales':
+			createGraph("Males by Age (millions)",Object.keys(countryPopDemoMale),Object.values(countryPopDemoMale));
+      break;
 
   }
 });
 
+// Creates checkboxes and labels for turning map information on and off
 $('#showMapOptions').click(function() {
 	$("#infoModalBody").html("");
 	$("#infoModalLabel").html(countryName + ' Map Options');
@@ -399,6 +429,7 @@ $('#showMapOptions').click(function() {
 	jQuery('#exampleModal').modal('toggle');
 });
 
+// Changes map information based on change of checkboxes created in $('#showMapOptions').click(function()
 $('body').on('change', 'input[name=mapSelector]:checkbox', function() {
 	switch ($(this).attr('id')) {
 		case 'earthquakes':
@@ -426,6 +457,20 @@ $('body').on('change', 'input[name=mapSelector]:checkbox', function() {
 			break;
 	}
 });
+
+// For removing map markers when switching countries
+function removeMapMarkers() {
+	if (majorCitiesArray.length > 0) {
+		earthquakesArray.forEach(function(item) {
+			item.remove();
+		})
+	}
+	if (majorCitiesArray.length > 0) {
+		majorCitiesArray.forEach(function(item) {
+			item.remove();
+		})
+	}
+}
 
 function createGraph(label, xAxis, yAxis) {
 	var ctx = document.getElementById('myChart');
@@ -473,10 +518,9 @@ function createGraph(label, xAxis, yAxis) {
 	});
 }
 
-function getEarthQuakeInfo(north, east, south, west, earthquakesArray) {
+function getEarthQuakeInfo() {
 
-		// Resets earthquake array to not display previous country again
-		// earthquakesArray = [];
+		earthquakesArray = [];
 
 		$.ajax({
 			url: "libs/php/getEarthQuakeInfo.php",
@@ -507,8 +551,6 @@ function getEarthQuakeInfo(north, east, south, west, earthquakesArray) {
 						earthquakesArray.push(circle);
 					})
 
-					console.log(earthquakesArray)
-
 				}
 
 			},
@@ -517,4 +559,66 @@ function getEarthQuakeInfo(north, east, south, west, earthquakesArray) {
 			}
 		});
 
+}
+
+function getWikiInfo() {
+	$.ajax({
+		url: "libs/php/getCountryWikiInfo.php",
+		type: 'POST',
+		dataType: 'json',
+		data: {
+			countryName: countryName.replace(" ", "+")
+		},
+		success: function(result) {
+
+			console.log(result);
+
+			if (result.status.name == "ok") {
+
+				countryWikiInfo = {
+					'Name': result['data'][0]['title'],
+					'Summary': result['data'][0]['summary'],
+					'Wiki URL': "https://" + result['data'][0]['wikipediaUrl'],
+					'Thumbnail': result['data'][0]['thumbnailImg']
+				}
+
+			}
+
+		},
+		error: function(jqXHR, textStatus, errorThrown) {
+			console.log("Request failed:" + textStatus)
+		}
+	});
+}
+
+function processLangString(languages) {
+	var langArray = languages.split(",");
+	var langArrayProcessed = [];
+	langArray.forEach(function(item) {
+		if (item.includes("-")){
+			let langSplit = item.split("-");
+			item = langSplit[0];
+			if (item.includes(";")){
+				let langSplit = item.split(";");
+				item = langSplit.join(", ");;
+			}
+		}
+		try {
+			langArrayProcessed.push(countryLangs[item]['name']);
+		}
+		catch(err) {
+			langArrayProcessed.push(item);
+		}
+	});
+	var langString = langArrayProcessed.join(", ");
+	return langString;
+}
+
+function resetArraysObjects() {
+	countryName = "";
+	countryInfo = {}; countryTimeInfo = {}; countryWikiInfo = {};
+	countryPrecipitationInfo = []; countryTemperatureInfo = [];
+	countryGDPInfo = {}; countryGDPPersonInfo = {}; countryGDPGrowthInfo = {};
+	countryPopDemo = {}; countryPopDemoFemale = {}; countryPopDemoMale = {};
+	earthquakesArray = []; majorCitiesArray = [];
 }

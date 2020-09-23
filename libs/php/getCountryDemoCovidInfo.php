@@ -1,10 +1,8 @@
 <?php
 
-	// Get country wikipedia information
 	$executionStartTime = microtime(true) / 1000;
 
-	$url = 'http://api.geonames.org/wikipediaSearchJSON?formatted=true&q=' . $_REQUEST['countryName'] . '&maxRows=10&username=jherring_eng&style=full';
-	// $url = 'http://api.geonames.org/wikipediaSearchJSON?formatted=true&q=united+states&maxRows=10&username=jherring_eng&style=full';
+	$url = 'https://api.globalhealth5050.org/api/v1/agesex?code=' . $_REQUEST['country'];
 
 	$ch = curl_init();
 	curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
@@ -21,7 +19,7 @@
 	$output['status']['name'] = "ok";
 	$output['status']['description'] = "mission saved";
 	$output['status']['returnedIn'] = (microtime(true) - $executionStartTime) / 1000 . " ms";
-	$output['data'] = $decode['geonames'];
+	$output['data'] = $decode['data'];
 
 	header('Content-Type: application/json; charset=UTF-8');
 
