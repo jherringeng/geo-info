@@ -14,6 +14,7 @@ var countryPopDemo = {}, countryPopDemoFemale = {}, countryPopDemoMale = {};
 var earthquakesArray = [], majorCitiesArray = [];
 var monthsArray = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 var myChart, rainfallLabel = "Rainfall (mm)", temperatureLabel = "Temperature (deg C)";
+var earthQuakesCheckbox = false, majorCitiesCheckbox = false;
 
 // Get border and country code json data from countries_small
 var requestURL = '/mapping/libs/js/countries_small.json';
@@ -25,7 +26,6 @@ request.onload = function() {
 	countryBorders = request.response[0];
 	countryCodes = request.response[1];
 	countryLangs = request.response[2];
-	console.log(countryLangs);
 }
 
 $( document ).ready(function() {
@@ -44,6 +44,13 @@ $( document ).ready(function() {
 
 });
 
+$(window).on("resize", resize);
+
+function resize(){
+
+  mymap.invalidateSize();
+
+}
 
 // Gets country information and moves map
 $('#btnRun').click(function() {
@@ -330,9 +337,9 @@ $('#showInfo').click(function() {
 		createGraph("GDP per year ($)",Object.keys(countryGDPInfo),Object.values(countryGDPInfo));
 	}
 	else if (selectedInfo === "demographics") {
-		if (countryPopDemo === {}) {
+		if (jQuery.isEmptyObject( countryPopDemo )) {
 			$("#infoModalLabel").html(countryName + ' Demographic Information');
-
+			createInfoNotAvailable("demographic");
 		}
 		else {
 			var chartTitle = 'Demographic Information';
@@ -418,7 +425,7 @@ $('body').on('change', 'input[name=graphSelector]:radio', function() {
   }
 });
 
-// Creates checkboxes and labels for turning map information on and off
+// Creates checkboxes and labels for turning map information on and off. State of checkboxes saved by earthQuakesCheckbox & majorCitiesCheckbox
 $('#showMapOptions').click(function() {
 	$("#infoModalBody").html("");
 	$("#infoModalLabel").html(countryName + ' Map Options');
@@ -426,6 +433,8 @@ $('#showMapOptions').click(function() {
 	$("#infoModalBody").append('<input type="checkbox" id="earthquakes" name="mapSelector" value="earthquakes"><br>');
 	$("#infoModalBody").append('<label for="cities">Show Major Cities</label>');
 	$("#infoModalBody").append('<input type="checkbox" id="cities" name="mapSelector" value="cities"><br>');
+	$("#earthquakes").prop( "checked", earthQuakesCheckbox );
+	$("#cities").prop( "checked", majorCitiesCheckbox );
 	jQuery('#exampleModal').modal('toggle');
 });
 
@@ -438,10 +447,12 @@ $('body').on('change', 'input[name=mapSelector]:checkbox', function() {
 				earthquakesArray.forEach(function(item) {
 					item.addTo(mymap);
 				})
+				earthQuakesCheckbox = true;
 			} else {
 				earthquakesArray.forEach(function(item) {
 					item.remove();
 				})
+				earthQuakesCheckbox = false;
 			}
 			break;
 		case 'cities':
@@ -449,10 +460,12 @@ $('body').on('change', 'input[name=mapSelector]:checkbox', function() {
 				majorCitiesArray.forEach(function(item) {
 					item.addTo(mymap);
 				})
+				majorCitiesCheckbox = true;
 			} else {
 				majorCitiesArray.forEach(function(item) {
 					item.remove();
 				})
+				majorCitiesCheckbox = false;
 			}
 			break;
 	}

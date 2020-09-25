@@ -1,9 +1,10 @@
 <?php
 
 $curl = curl_init();
+  //"https://countries-cities.p.rapidapi.com/location/country/us/city/list?page=1&per_page=20&format=json&population=1000000"
   // "https://countries-cities.p.rapidapi.com/location/country/' . $_REQUEST['country'] . '/city/list?page=1&per_page=20&format=json&population=1000000",
 curl_setopt_array($curl, array(
-	CURLOPT_URL => "https://countries-cities.p.rapidapi.com/location/country/us/city/list?page=1&per_page=20&format=json&population=1000000",
+	CURLOPT_URL => "https://countries-cities.p.rapidapi.com/location/country/" . $_REQUEST['country'] . "/city/list?page=1&per_page=20&format=json&population=1000000",
 	CURLOPT_RETURNTRANSFER => true,
 	CURLOPT_FOLLOWLOCATION => true,
 	CURLOPT_ENCODING => "",
