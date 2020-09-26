@@ -15,6 +15,7 @@ var earthquakesArray = [], majorCitiesArray = [];
 var monthsArray = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 var myChart, rainfallLabel = "Rainfall (mm)", temperatureLabel = "Temperature (deg C)";
 var earthQuakesCheckbox = false, majorCitiesCheckbox = false;
+var countryCodes2Borders = {};
 
 // Get border and country code json data from countries_small
 var requestURL = '/mapping/libs/js/countries_small.json';
@@ -24,8 +25,23 @@ request.responseType = 'json';
 request.send();
 request.onload = function() {
 	countryBorders = request.response[0];
+	console.log(countryBorders)
 	countryCodes = request.response[1];
+	console.log(countryCodes);
 	countryLangs = request.response[2];
+	Object.values(countryCodes).forEach(function(item) {
+		var countryBorderIndex;
+		for (var i = 0; i < countryBorders['features'].length; i++) {
+			// console.log(item);
+			if (countryBorders['features'][i]['id'] == item) {
+				countryBorderIndex = i;
+				break;
+			}
+		}
+		countryCodes2Borders[item] = countryBorderIndex;
+	});
+	console.log(countryCodes2Borders);
+
 }
 
 $( document ).ready(function() {
@@ -40,7 +56,48 @@ $( document ).ready(function() {
 		 accessToken: 'your.mapbox.access.token'
 	}).addTo(mymap);
 
-	L.geoJSON(countryBorders).addTo(mymap);
+	// L.tileLayer.provider('Stamen.Watercolor').addTo(mymap);
+	// L.tileLayer.provider('Esri.WorldImagery').addTo(mymap);
+	// L.tileLayer.provider('NASAGIBS.ViirsEarthAtNight2012').addTo(mymap);
+
+	// L.geoJSON(countryBorders).addTo(mymap);
+
+	var states = [{
+    "type": "Feature",
+    "properties": {"party": "Republican"},
+    "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+            [-104.05, 48.99],
+            [-97.22,  48.98],
+            [-96.58,  45.94],
+            [-104.03, 45.94],
+            [-104.05, 48.99]
+        ]]
+    }
+}, {
+    "type": "Feature",
+    "properties": {"party": "Democrat"},
+    "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+            [-109.05, 41.00],
+            [-102.06, 40.99],
+            [-102.03, 36.99],
+            [-109.04, 36.99],
+            [-109.05, 41.00]
+        ]]
+    }
+}];
+
+L.geoJSON(states, {
+    style: function(feature) {
+        switch (feature.properties.party) {
+            case 'Republican': return {color: "#ff0000"};
+            case 'Democrat':   return {color: "#0000ff"};
+        }
+    }
+}).addTo(mymap);
 
 });
 
@@ -58,6 +115,13 @@ $('#btnRun').click(function() {
 	removeMapMarkers();
 	resetArraysObjects();
 	var countryCode2 = $('#selCountry').val();
+	var countryCode3 = countryCodes[countryCode2];
+
+	// L.geoJSON(countryBorders).addTo(mymap);
+	if (countryCodes2Borders[countryCode3] != "undefined") {
+		L.geoJSON(countryBorders['features'][countryCodes2Borders[countryCode3]]).addTo(mymap);
+	}
+
 
 	$.ajax({
 		url: "libs/php/getCountryInfo.php",
@@ -137,8 +201,6 @@ $('#btnRun').click(function() {
 			console.log("Request failed");
 		}
 	});
-
-	var countryCode3 = countryCodes[countryCode2];
 
 	$.ajax({
 		url: "libs/php/getCountryClimateInfo.php",
