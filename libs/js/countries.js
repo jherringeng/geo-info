@@ -110,7 +110,8 @@ function resize(){
 }
 
 // Gets country information and moves map
-$('#btnRun').click(function() {
+$('#selCountry').change(function() {
+// $('#btnRun').click(function() {
 
 	removeMapMarkers();
 	resetArraysObjects();
