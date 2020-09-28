@@ -14,7 +14,7 @@ var countryPopDemo = {}, countryPopDemoFemale = {}, countryPopDemoMale = {};
 var earthquakesArray = [], majorCitiesArray = [];
 var monthsArray = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 var myChart, rainfallLabel = "Rainfall (mm)", temperatureLabel = "Temperature (deg C)";
-var earthQuakesCheckbox = false, majorCitiesCheckbox = false;
+var earthQuakesCheckbox = false, majorCitiesCheckbox = false; majorCitiesShown = false;
 var countryCodes2Borders = {};
 
 // Get border and country code json data from countries_small
@@ -47,7 +47,7 @@ request.onload = function() {
 $( document ).ready(function() {
 	mymap = L.map('mapid').setView([latCentre, lngCentre], 5);
 
-	L.tileLayer('https://api.mapbox.com/styles/v1/{id}/tiles/{z}/{x}/{y}?access_token=pk.eyJ1IjoiamhlcnJpbmctZW5nIiwiYSI6ImNrZjM2YmE4bjAwNjQyeW55emF1ZWY5MHAifQ._9RMUyQWV7myURtskZ7dcQ', {
+	var roads = L.tileLayer('https://api.mapbox.com/styles/v1/{id}/tiles/{z}/{x}/{y}?access_token=pk.eyJ1IjoiamhlcnJpbmctZW5nIiwiYSI6ImNrZjM2YmE4bjAwNjQyeW55emF1ZWY5MHAifQ._9RMUyQWV7myURtskZ7dcQ', {
 		 attribution: 'Map data &copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors, <a href="https://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, Imagery © <a href="https://www.mapbox.com/">Mapbox</a>',
 		 maxZoom: 18,
 		 id: 'mapbox/streets-v11',
@@ -58,23 +58,38 @@ $( document ).ready(function() {
 
 	// L.tileLayer.provider('Stamen.Watercolor').addTo(mymap);
 	// L.tileLayer.provider('Esri.WorldImagery').addTo(mymap);
-	// L.tileLayer.provider('NASAGIBS.ViirsEarthAtNight2012').addTo(mymap);
+	var night = L.tileLayer.provider('NASAGIBS.ViirsEarthAtNight2012').addTo(mymap);
 
-	// L.geoJSON(countryBorders).addTo(mymap);
-
+	var toggle = L.easyButton ({
+	  position: 'topright', // topleft, topright, bottomleft, bottomright
+	  //your code here
+	});
 	L.easyButton('<img id="info-button" src="libs/icons/information.svg">', function(btn, map){
-    // var antarctica = [-77,70];
-    // mymap.setView(antarctica);
+		$("#infoModalBody").html("");
+		$("#infoModalLabel").html(countryName + ' General Information');
+		createTable(countryInfo);
+		jQuery('#exampleModal').modal('toggle');
+
 	}, 'General information').addTo( mymap );
 
 	L.easyButton('<img id="info-button" src="libs/icons/wall-clock.svg">', function(btn, map){
-    // var antarctica = [-77,70];
-    // mymap.setView(antarctica);
+		$("#infoModalBody").html("");
+		jQuery('#exampleModal').modal('toggle');
+
 	}, 'Timezone information').addTo( mymap );
 
 	L.easyButton('<img src="libs/icons/building.svg">', function(btn, map){
-    // var antarctica = [-77,70];
-    // mymap.setView(antarctica);
+		if (majorCitiesShown == false) {
+			majorCitiesArray.forEach(function(item) {
+				item.addTo(mymap);
+			})
+			majorCitiesShown = true;
+		} else {
+			majorCitiesArray.forEach(function(item) {
+				item.remove();
+			})
+			majorCitiesShown = false;
+		}
 	}, 'Cities above 1m population').addTo( mymap );
 
 	L.easyButton('<img src="libs/icons/earthquake.svg">', function(btn, map){
@@ -83,25 +98,41 @@ $( document ).ready(function() {
 	}, 'Recent earthquakes').addTo( mymap );
 
 	L.easyButton('<img src="libs/icons/demographics-of-a-population.svg">', function(btn, map){
-    // var antarctica = [-77,70];
-    // mymap.setView(antarctica);
+		$("#infoModalBody").html("");
+		jQuery('#exampleModal').modal('toggle');
 
 	}, 'Demographics').addTo( mymap );
 
 	L.easyButton('<img src="libs/icons/climate-change.svg">', function(btn, map){
-    // var antarctica = [-77,70];
-    // mymap.setView(antarctica);
+		$("#infoModalBody").html("");
+		var chartTitle = 'Climate Information';
+		var chartNameId = {
+			"Temperature": "temp",
+			"Rainfall": "rain"
+		}
+		createChartArea(chartTitle, chartNameId);
+		createGraph(temperatureLabel,monthsArray,countryTemperatureInfo);
+		jQuery('#exampleModal').modal('toggle');
 
 	}, 'Climate').addTo( mymap );
 
 	L.easyButton('<img src="libs/icons/money-growth.svg">', function(btn, map){
-    // var antarctica = [-77,70];
-    // mymap.setView(antarctica);
+		$("#infoModalBody").html("");
+		var chartTitle = 'Economic Information';
+		var chartNameId = {
+			"GDP": "gdp",
+			"GDP per Person": "gdpPerson",
+			"GDP Growth": "gdpGrowth"
+		}
+		createChartArea(chartTitle, chartNameId);
+		createGraph("GDP per year ($)",Object.keys(countryGDPInfo),Object.values(countryGDPInfo));
+		jQuery('#exampleModal').modal('toggle');
 
 	}, 'Gross Domestic Product').addTo( mymap );
 
 });
 
+// Resizes map on window resize
 $(window).on("resize", resize);
 
 function resize(){
@@ -109,6 +140,18 @@ function resize(){
   mymap.invalidateSize();
 
 }
+
+$('#gdp').click(function() {
+	alert("gdp clicked")
+	var chartTitle = 'Economic Information';
+	var chartNameId = {
+		"GDP": "gdp",
+		"GDP per Person": "gdpPerson",
+		"GDP Growth": "gdpGrowth"
+	}
+	createChartArea(chartTitle, chartNameId);
+	createGraph("GDP per year ($)",Object.keys(countryGDPInfo),Object.values(countryGDPInfo));
+})
 
 // Gets country information and moves map
 $('#selCountry').change(function() {
@@ -454,7 +497,7 @@ function createChartArea (chartTitle, chartNameId) {
 	});
 	var ids = Object.values(chartNameId);
 	$("#" + ids[0]).prop( "checked", true );
-	$("#infoModalBody").append('<canvas id="myChart" width="400" height="400"></canvas>');
+	$("#infoModalBody").append('<canvas id="myChart" width="80vw" height="80vh"></canvas>');
 }
 
 // Changes chart and info on change of radiobuttons created in createChartArea()

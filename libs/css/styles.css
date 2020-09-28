@@ -54,8 +54,9 @@ html, body, #container {
     top: 50px !important;
 }
 
-#info-button {
-
+.selectpicker {
+  padding: 8px;
+  border-radius: 10px;
 }
 
 /* .leaflet-touch .leaflet-bar a:first-child {
