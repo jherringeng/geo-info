@@ -62,42 +62,43 @@ $( document ).ready(function() {
 
 	// L.geoJSON(countryBorders).addTo(mymap);
 
-	var states = [{
-    "type": "Feature",
-    "properties": {"party": "Republican"},
-    "geometry": {
-        "type": "Polygon",
-        "coordinates": [[
-            [-104.05, 48.99],
-            [-97.22,  48.98],
-            [-96.58,  45.94],
-            [-104.03, 45.94],
-            [-104.05, 48.99]
-        ]]
-    }
-}, {
-    "type": "Feature",
-    "properties": {"party": "Democrat"},
-    "geometry": {
-        "type": "Polygon",
-        "coordinates": [[
-            [-109.05, 41.00],
-            [-102.06, 40.99],
-            [-102.03, 36.99],
-            [-109.04, 36.99],
-            [-109.05, 41.00]
-        ]]
-    }
-}];
+	L.easyButton('<img id="info-button" src="libs/icons/information.svg">', function(btn, map){
+    // var antarctica = [-77,70];
+    // mymap.setView(antarctica);
+	}, 'General information').addTo( mymap );
 
-L.geoJSON(states, {
-    style: function(feature) {
-        switch (feature.properties.party) {
-            case 'Republican': return {color: "#ff0000"};
-            case 'Democrat':   return {color: "#0000ff"};
-        }
-    }
-}).addTo(mymap);
+	L.easyButton('<img id="info-button" src="libs/icons/wall-clock.svg">', function(btn, map){
+    // var antarctica = [-77,70];
+    // mymap.setView(antarctica);
+	}, 'Timezone information').addTo( mymap );
+
+	L.easyButton('<img src="libs/icons/building.svg">', function(btn, map){
+    // var antarctica = [-77,70];
+    // mymap.setView(antarctica);
+	}, 'Cities above 1m population').addTo( mymap );
+
+	L.easyButton('<img src="libs/icons/earthquake.svg">', function(btn, map){
+    // var antarctica = [-77,70];
+    // mymap.setView(antarctica);
+	}, 'Recent earthquakes').addTo( mymap );
+
+	L.easyButton('<img src="libs/icons/demographics-of-a-population.svg">', function(btn, map){
+    // var antarctica = [-77,70];
+    // mymap.setView(antarctica);
+
+	}, 'Demographics').addTo( mymap );
+
+	L.easyButton('<img src="libs/icons/climate-change.svg">', function(btn, map){
+    // var antarctica = [-77,70];
+    // mymap.setView(antarctica);
+
+	}, 'Climate').addTo( mymap );
+
+	L.easyButton('<img src="libs/icons/money-growth.svg">', function(btn, map){
+    // var antarctica = [-77,70];
+    // mymap.setView(antarctica);
+
+	}, 'Gross Domestic Product').addTo( mymap );
 
 });
 
@@ -370,11 +371,11 @@ $('#selCountry').change(function() {
 });
 
 // Sets country information and format for the modal
-$('#showInfo').click(function() {
+$('.infoPicker').click(function() {
 	$("#infoModalBody").html("");
 
 	// Gets value of #selectInfo to be passed to if-else statements (change to switch-case?)
-	var selectedInfo = $('#selectInfo').val();
+	var selectedInfo = $(this).val();
 
 	if (selectedInfo === "general"){
 		$("#infoModalLabel").html(countryName + ' General Information');

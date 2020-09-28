@@ -31,6 +31,10 @@ html, body, #container {
   flex-wrap: wrap-reverse;
 }
 
+.btn {
+  box-shadow: 3px 3px 1px #888888;
+}
+
 #footer {
   position: fixed;
   bottom: 0px;
@@ -46,7 +50,15 @@ html, body, #container {
   margin: 5px 10px;
 }
 
-.leaflet-touch .leaflet-bar a:first-child {
+.leaflet-top {
+    top: 50px !important;
+}
+
+#info-button {
+
+}
+
+/* .leaflet-touch .leaflet-bar a:first-child {
     border-top-left-radius: 4px;
     border-top-right-radius: 4px;
 }
@@ -66,4 +78,4 @@ a.leaflet-control-zoom-in, a.leaflet-control-zoom-out {
   font-size: 60px !important;
   height: 60px !important;
   width: 60px !important;
-}
+} */
