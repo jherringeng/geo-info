@@ -57,14 +57,76 @@ $( document ).ready(function() {
 	}).addTo(mymap);
 
 	// L.tileLayer.provider('Stamen.Watercolor').addTo(mymap);
-	// L.tileLayer.provider('Esri.WorldImagery').addTo(mymap);
-	var night = L.tileLayer.provider('NASAGIBS.ViirsEarthAtNight2012').addTo(mymap);
+	var terrain = L.tileLayer.provider('Esri.WorldImagery');
+	var night = L.tileLayer.provider('NASAGIBS.ViirsEarthAtNight2012');
+	var train = L.tileLayer.provider('OpenRailwayMap');
+	var safecast = L.tileLayer.provider('SafeCast');
 
-	var toggle = L.easyButton ({
-	  position: 'topright', // topleft, topright, bottomleft, bottomright
-	  //your code here
-	});
-	L.easyButton('<img id="info-button" src="libs/icons/information.svg">', function(btn, map){
+	L.easyButton ({
+		position: 'topright',
+	  states: [{
+			stateName: 'unloaded',
+	    icon: '<img src="libs/icons/terrain.svg">',
+	    title: 'Countries by terrain',
+	    onClick: function(control) {
+				if (mymap.hasLayer(terrain)) {
+					mymap.removeLayer(terrain);
+				} else {
+					mymap.addLayer(terrain);
+				}
+    	}
+		}]
+  }).addTo(mymap);
+
+	L.easyButton ({
+		position: 'topright',
+	  states: [{
+			stateName: 'unloaded',
+	    icon: '<img src="libs/icons/moon.svg">',
+	    title: 'Countries by night',
+	    onClick: function(control) {
+				if (mymap.hasLayer(night)) {
+					mymap.removeLayer(night);
+				} else {
+					mymap.addLayer(night);
+				}
+    	}
+		}]
+  }).addTo(mymap);
+
+	L.easyButton ({
+		position: 'topright',
+	  states: [{
+			stateName: 'unloaded',
+	    icon: '<img src="libs/icons/train.svg">',
+	    title: 'Train lines',
+	    onClick: function(control) {
+				if (mymap.hasLayer(train)) {
+					mymap.removeLayer(train);
+				} else {
+					mymap.addLayer(train);
+				}
+    	}
+		}]
+  }).addTo(mymap);
+
+	L.easyButton ({
+		position: 'topright',
+	  states: [{
+			stateName: 'unloaded',
+	    icon: '<img src="libs/icons/radiactive.svg">',
+	    title: 'Train lines',
+	    onClick: function(control) {
+				if (mymap.hasLayer(safecast)) {
+					mymap.removeLayer(safecast);
+				} else {
+					mymap.addLayer(safecast);
+				}
+    	}
+		}]
+  }).addTo(mymap);
+
+	L.easyButton('<img src="libs/icons/information.svg">', function(btn, map){
 		$("#infoModalBody").html("");
 		$("#infoModalLabel").html(countryName + ' General Information');
 		createTable(countryInfo);
@@ -72,7 +134,7 @@ $( document ).ready(function() {
 
 	}, 'General information').addTo( mymap );
 
-	L.easyButton('<img id="info-button" src="libs/icons/wall-clock.svg">', function(btn, map){
+	L.easyButton('<img src="libs/icons/wall-clock.svg">', function(btn, map){
 		$("#infoModalBody").html("");
 		jQuery('#exampleModal').modal('toggle');
 
@@ -99,6 +161,20 @@ $( document ).ready(function() {
 
 	L.easyButton('<img src="libs/icons/demographics-of-a-population.svg">', function(btn, map){
 		$("#infoModalBody").html("");
+		if (jQuery.isEmptyObject( countryPopDemo )) {
+			$("#infoModalLabel").html(countryName + ' Demographic Information');
+			createInfoNotAvailable("demographic");
+		}
+		else {
+			var chartTitle = 'Demographic Information';
+			var chartNameId = {
+				"People by Age": "demoPeople",
+				"Males by Age": "demoMales",
+				"Females by Age": "demoFemales"
+			}
+			createChartArea(chartTitle, chartNameId);
+			createGraph("People in Age Ranges (millions)",Object.keys(countryPopDemo),Object.values(countryPopDemo));
+		}
 		jQuery('#exampleModal').modal('toggle');
 
 	}, 'Demographics').addTo( mymap );
