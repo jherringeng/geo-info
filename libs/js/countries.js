@@ -47,6 +47,8 @@ request.onload = function() {
 // Create the map and add buttons
 $( document ).ready(function() {
 
+	console.log(window.hello)
+
 	mymap = L.map('mapid').setView([latCentre, lngCentre], 5);
 
 	var roads = L.tileLayer('https://api.mapbox.com/styles/v1/{id}/tiles/{z}/{x}/{y}?access_token=pk.eyJ1IjoiamhlcnJpbmctZW5nIiwiYSI6ImNrZjM2YmE4bjAwNjQyeW55emF1ZWY5MHAifQ._9RMUyQWV7myURtskZ7dcQ', {
@@ -333,14 +335,6 @@ $('#selCountry').change(function() {
 
 	removeMapMarkers();
 	resetArraysObjects();
-	var countryCode2 = $('#selCountry').val();
-	var countryCode3 = countryCodes[countryCode2];
-
-	// L.geoJSON(countryBorders).addTo(mymap);
-	if (countryCodes2Borders[countryCode3] != "undefined") {
-		L.geoJSON(countryBorders['features'][countryCodes2Borders[countryCode3]]).addTo(mymap);
-	}
-
 
 	$.ajax({
 		url: "libs/php/getCountryInfo.php",
@@ -412,48 +406,6 @@ $('#selCountry').change(function() {
 					'Sunrise': result['data']['sunrise'],
 					'Sunset': result['data']['sunset']
 				}
-
-			}
-
-		},
-		error: function(jqXHR, textStatus, errorThrown) {
-			console.log("Request failed");
-		}
-	});
-
-	$.ajax({
-		url: "libs/php/getCountryClimateInfo.php",
-		type: 'POST',
-		dataType: 'json',
-		data: {
-			country: countryCode3
-		},
-		success: function(result) {
-
-			if (result.status.name == "ok") {
-
-				countryPrecipitationInfo = result['data'][0]['monthVals'];
-
-			}
-
-		},
-		error: function(jqXHR, textStatus, errorThrown) {
-			console.log("Request failed");
-		}
-	});
-
-	$.ajax({
-		url: "libs/php/getCountryTemperatureInfo.php",
-		type: 'POST',
-		dataType: 'json',
-		data: {
-			country: countryCode3
-		},
-		success: function(result) {
-
-			if (result.status.name == "ok") {
-
-				countryTemperatureInfo = result['data'][0]['monthVals'];
 
 			}
 
@@ -582,6 +534,56 @@ $('#selCountry').change(function() {
 		},
 		error: function(jqXHR, textStatus, errorThrown) {
 			console.log("Request failed: " + textStatus);
+		}
+	});
+
+	var countryCode2 = $('#selCountry').val();
+	var countryCode3 = countryCodes[countryCode2];
+
+	// L.geoJSON(countryBorders).addTo(mymap);
+	if (countryCodes2Borders[countryCode3] != "undefined") {
+		L.geoJSON(countryBorders['features'][countryCodes2Borders[countryCode3]]).addTo(mymap);
+	}
+
+	$.ajax({
+		url: "libs/php/getCountryClimateInfo.php",
+		type: 'POST',
+		dataType: 'json',
+		data: {
+			country: countryCode3
+		},
+		success: function(result) {
+
+			if (result.status.name == "ok") {
+
+				countryPrecipitationInfo = result['data'][0]['monthVals'];
+
+			}
+
+		},
+		error: function(jqXHR, textStatus, errorThrown) {
+			console.log("Request failed");
+		}
+	});
+
+	$.ajax({
+		url: "libs/php/getCountryTemperatureInfo.php",
+		type: 'POST',
+		dataType: 'json',
+		data: {
+			country: countryCode3
+		},
+		success: function(result) {
+
+			if (result.status.name == "ok") {
+
+				countryTemperatureInfo = result['data'][0]['monthVals'];
+
+			}
+
+		},
+		error: function(jqXHR, textStatus, errorThrown) {
+			console.log("Request failed");
 		}
 	});
 
