@@ -14,7 +14,7 @@ var countryPopDemo = {}, countryPopDemoFemale = {}, countryPopDemoMale = {};
 var earthquakesArray = [], majorCitiesArray = [];
 var monthsArray = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 var myChart, rainfallLabel = "Rainfall (mm)", temperatureLabel = "Temperature (deg C)";
-var earthQuakesCheckbox = false, majorCitiesCheckbox = false; majorCitiesShown = false;
+var earthQuakesCheckbox = false, majorCitiesCheckbox = false, majorCitiesShown = false, earthquakesShown = false;
 var countryCodes2Borders = {};
 
 // Get border and country code json data from countries_small
@@ -44,6 +44,7 @@ request.onload = function() {
 
 }
 
+// Create the map and add buttons
 $( document ).ready(function() {
 	mymap = L.map('mapid').setView([latCentre, lngCentre], 5);
 
@@ -126,6 +127,62 @@ $( document ).ready(function() {
 		}]
   }).addTo(mymap);
 
+	L.easyButton ({
+		position: 'topright',
+	  states: [{
+			stateName: 'unloaded',
+	    icon: '<img src="libs/icons/earthquake.svg">',
+	    title: 'Recent earthquakes',
+	    onClick: function(control) {
+				if (earthquakesShown == false) {
+					earthquakesArray.forEach(function(item) {
+						item.addTo(mymap);
+					})
+					earthquakesShown = true;
+				} else {
+					earthquakesArray.forEach(function(item) {
+						item.remove();
+					})
+					earthquakesShown = false;
+				}
+    	}
+		}]
+  }).addTo(mymap);
+
+	L.easyButton ({
+		position: 'topright',
+	  states: [{
+			stateName: 'unloaded',
+	    icon: '<img src="libs/icons/building.svg">',
+	    title: 'Cities with population above 1m',
+	    onClick: function(control) {
+				if (majorCitiesShown == false) {
+					majorCitiesArray.forEach(function(item) {
+						item.addTo(mymap);
+					})
+					majorCitiesShown = true;
+				} else {
+					majorCitiesArray.forEach(function(item) {
+						item.remove();
+					})
+					majorCitiesShown = false;
+				}
+    	}
+		}]
+  }).addTo(mymap);
+
+	if (majorCitiesShown == false) {
+		majorCitiesArray.forEach(function(item) {
+			item.addTo(mymap);
+		})
+		majorCitiesShown = true;
+	} else {
+		majorCitiesArray.forEach(function(item) {
+			item.remove();
+		})
+		majorCitiesShown = false;
+	}
+
 	L.easyButton('<img src="libs/icons/information.svg">', function(btn, map){
 		$("#infoModalBody").html("");
 		$("#infoModalLabel").html(countryName + ' General Information');
@@ -136,6 +193,8 @@ $( document ).ready(function() {
 
 	L.easyButton('<img src="libs/icons/wall-clock.svg">', function(btn, map){
 		$("#infoModalBody").html("");
+		$("#infoModalLabel").html('Time Information')
+		createTable(countryTimeInfo);
 		jQuery('#exampleModal').modal('toggle');
 
 	}, 'Timezone information').addTo( mymap );
@@ -153,11 +212,6 @@ $( document ).ready(function() {
 			majorCitiesShown = false;
 		}
 	}, 'Cities above 1m population').addTo( mymap );
-
-	L.easyButton('<img src="libs/icons/earthquake.svg">', function(btn, map){
-    // var antarctica = [-77,70];
-    // mymap.setView(antarctica);
-	}, 'Recent earthquakes').addTo( mymap );
 
 	L.easyButton('<img src="libs/icons/demographics-of-a-population.svg">', function(btn, map){
 		$("#infoModalBody").html("");
@@ -552,15 +606,14 @@ function createInfoNotAvailable(info) {
 }
 
 function createTable(showInfo) {
-	$("#infoModalBody").append('<table id="infoTable" class="table">')
+	$("#infoModalBody").append('<table id="infoTable"></table>');
 	$.each( showInfo, function( key, value ) {
-		$("#infoModalBody").append('<tr><td>' + key + ' </td><td>' + value +'</td></tr>');
+		$("#infoTable").append('<tr><td>' + key + ' </td><td>' + value +'</td></tr>');
 	});
-	$("#infoModalBody").append('</table>')
 }
 
 function createWikiInfo(wikiInfo) {
-	$("#infoModalBody").append('<img src="' + wikiInfo['Thumbnail'] + '" class="float-left">');
+	$("#infoModalBody").append('<img id="wiki-thumb" src="' + wikiInfo['Thumbnail'] + '" class="float-left">');
 	$("#infoModalBody").append('<p>' + wikiInfo['Summary'] + '</p>');
 	$("#infoModalBody").append('<a href="' + wikiInfo['Wiki URL'] + '" target="_blank" class="btn btn-primary text-center">Read More</a>');
 }
@@ -569,7 +622,7 @@ function createWikiInfo(wikiInfo) {
 function createChartArea (chartTitle, chartNameId) {
 	$("#infoModalLabel").html(countryName + ' ' + chartTitle);
 	$.each( chartNameId, function( key, value ) {
-		$("#infoModalBody").append('<div><input type="radio" id="' + value + '" name="graphSelector" value="' + value + '" class="mr-2"><label for="' + value + '" class="mr-2">' + key + '</label></div>');
+		$("#infoModalBody").append('<div class="d-inline"><input type="radio" id="' + value + '" name="graphSelector" value="' + value + '" class="mr-2"><label for="' + value + '" class="mr-2">' + key + '</label></div>');
 	});
 	var ids = Object.values(chartNameId);
 	$("#" + ids[0]).prop( "checked", true );

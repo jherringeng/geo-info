@@ -1,3 +1,20 @@
+@media only screen and (orientation: portrait)  {
+
+    .leaflet-top {
+        top: 60px;
+    }
+
+}
+
+/* Landscape */
+@media only screen and (orientation: landscape) {
+
+    .leaflet-top {
+        top: 10px;
+    }
+
+}
+
 body {
   padding: 0;
   margin: 0;
@@ -6,6 +23,17 @@ body {
 html, body, #container {
   height: 100%;
   width: 100%;
+}
+
+#infoTable {
+  width: 80%;
+  margin: auto;
+  table-layout: fixed;
+}
+
+#infoTable tr td {
+  padding: 8px;
+  width: 50%;
 }
 
 #mapid {
@@ -31,6 +59,10 @@ html, body, #container {
   flex-wrap: wrap-reverse;
 }
 
+#wiki-thumb {
+  margin: 6px;
+}
+
 .btn {
   box-shadow: 3px 3px 1px #888888;
 }
@@ -50,13 +82,14 @@ html, body, #container {
   margin: 5px 10px;
 }
 
-.leaflet-top {
-    top: 50px !important;
-}
-
 .selectpicker {
   padding: 8px;
   border-radius: 10px;
+}
+
+.leaflet-control-attribution {
+  display: none;
+  z-index: 500 !important;
 }
 
 /* .leaflet-touch .leaflet-bar a:first-child {
