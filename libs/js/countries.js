@@ -5,7 +5,7 @@ var north = 59.3607741849963,
 		south = 49.9028622252397,
 		west = -8.61772077108559;
 
-var latCentre = (north + south) / 2, lngCentre = (east + west) / 2, scaling = 5;
+var latCentre = 0, lngCentre = 0, scaling = 3;
 
 var countryName, countryBorders, countryCodes;
 var countryInfo, countryTimeInfo, countryWikiInfo, countryPrecipitationInfo, countryTemperatureInfo;
@@ -46,6 +46,7 @@ request.onload = function() {
 
 // Create the map and add buttons
 $( document ).ready(function() {
+
 	mymap = L.map('mapid').setView([latCentre, lngCentre], 5);
 
 	var roads = L.tileLayer('https://api.mapbox.com/styles/v1/{id}/tiles/{z}/{x}/{y}?access_token=pk.eyJ1IjoiamhlcnJpbmctZW5nIiwiYSI6ImNrZjM2YmE4bjAwNjQyeW55emF1ZWY5MHAifQ._9RMUyQWV7myURtskZ7dcQ', {
@@ -259,6 +260,49 @@ $( document ).ready(function() {
 		jQuery('#exampleModal').modal('toggle');
 
 	}, 'Gross Domestic Product').addTo( mymap );
+
+
+	//
+	function success(position) {
+    const latitude  = position.coords.latitude;
+    const longitude = position.coords.longitude;
+
+    console.log(`Latitude: ${latitude} °, Longitude: ${longitude} °`);
+
+		$.ajax({
+			url: "libs/php/getCountryCode.php",
+			type: 'POST',
+			dataType: 'json',
+			data: {
+				lat: latitude,
+				lng: longitude
+			},
+			success: function(result) {
+
+				if (result.status.name == "ok") {
+
+					console.log(result['data']['countryCode']);
+					$("#selCountry").val(result['data']['countryCode']).change();
+
+				}
+
+			},
+			error: function(jqXHR, textStatus, errorThrown) {
+				console.log("Request failed");
+			}
+		});
+  }
+
+  function error() {
+    alert('Unable to retrieve your location');
+  }
+
+  if(!navigator.geolocation) {
+    alert('Geolocation is not supported by your browser');
+  } else {
+    status.textContent = 'Locating…';
+    navigator.geolocation.getCurrentPosition(success, error);
+  }
 
 });
 
@@ -543,6 +587,23 @@ $('#selCountry').change(function() {
 
 });
 
+$('#icon-key').click(function() {
+	$("#infoModalLabel").html('Icon Key');
+	$("#infoModalBody").html('<table id="iconKey" class="table"></table> ');
+	$("#iconKey").append('<tr><td>General Information</td><td><img src="libs/icons/information.svg"></td></tr>');
+	$("#iconKey").append('<tr><td>Timezone Information</td><td><img width="18" height="18" src="libs/icons/wall-clock.svg"></td></tr>');
+	$("#iconKey").append('<tr><td>Population Demographics</td><td><img src="libs/icons/demographics-of-a-population.svg"></td></tr>');
+	$("#iconKey").append('<tr><td>Climate Information</td><td><img src="libs/icons/climate-change.svg"></td></tr>');
+	$("#iconKey").append('<tr><td>Gross Domestic Product</td><td><img src="libs/icons/money-growth.svg"></td></tr>');
+	$("#iconKey").append('<tr><td>Terrain View</td><td><img width="18" height="18" src="libs/icons/terrain.svg"></td></tr>');
+	$("#iconKey").append('<tr><td>Night View</td><td><img src="libs/icons/moon.svg"></td></tr>');
+	$("#iconKey").append('<tr><td>Railways</td><td><img width="18" height="18" src="libs/icons/train.svg"></td></tr>');
+	$("#iconKey").append('<tr><td>Radiation</td><td><img src="libs/icons/radiactive.svg"></td></tr>');
+	$("#iconKey").append('<tr><td>Recent Earthquakes</td><td><img width="18" height="18" src="libs/icons/earthquake.svg"></td></tr>');
+	$("#iconKey").append('<tr><td>Cities with above 1m Population</td><td><img width="18" height="18" src="libs/icons/building.svg"></td></tr>');
+	jQuery('#exampleModal').modal('toggle');
+});
+
 // Sets country information and format for the modal
 $('.infoPicker').click(function() {
 	$("#infoModalBody").html("");
@@ -626,7 +687,7 @@ function createChartArea (chartTitle, chartNameId) {
 	});
 	var ids = Object.values(chartNameId);
 	$("#" + ids[0]).prop( "checked", true );
-	$("#infoModalBody").append('<canvas id="myChart" width="80vw" height="80vh"></canvas>');
+	$("#infoModalBody").append('<canvas id="myChart" width="100%" height="60vh"></canvas>');
 }
 
 // Changes chart and info on change of radiobuttons created in createChartArea()
@@ -746,6 +807,12 @@ function createGraph(label, xAxis, yAxis) {
 	            ],
 	            borderColor: [
 	                'rgba(255, 99, 132, 1)',
+	                'rgba(54, 162, 235, 1)',
+	                'rgba(255, 206, 86, 1)',
+	                'rgba(75, 192, 192, 1)',
+	                'rgba(153, 102, 255, 1)',
+	                'rgba(255, 159, 64, 1)',
+									'rgba(255, 99, 132, 1)',
 	                'rgba(54, 162, 235, 1)',
 	                'rgba(255, 206, 86, 1)',
 	                'rgba(75, 192, 192, 1)',

@@ -25,13 +25,21 @@ html, body, #container {
   width: 100%;
 }
 
-#infoTable {
+.btn {
+  box-shadow: 3px 3px 1px #888888;
+}
+
+#exampleModal {
+  max-height: 90%;
+}
+
+table {
   width: 80%;
   margin: auto;
   table-layout: fixed;
 }
 
-#infoTable tr td {
+table tr td {
   padding: 8px;
   width: 50%;
 }
@@ -61,10 +69,6 @@ html, body, #container {
 
 #wiki-thumb {
   margin: 6px;
-}
-
-.btn {
-  box-shadow: 3px 3px 1px #888888;
 }
 
 #footer {
