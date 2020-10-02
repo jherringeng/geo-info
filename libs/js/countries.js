@@ -7,7 +7,7 @@ var north = 59.3607741849963,
 
 var latCentre = 0, lngCentre = 0, scaling = 3;
 
-var countryName, countryBorders, countryCodes;
+var countryName, countryCodes, countryCodes2Borders = {};
 var countryInfo, countryTimeInfo, countryWikiInfo, countryPrecipitationInfo, countryTemperatureInfo;
 var countryGDPInfo = {}, countryGDPPersonInfo = {}, countryGDPGrowthInfo = {};
 var countryPopDemo = {}, countryPopDemoFemale = {}, countryPopDemoMale = {};
@@ -15,39 +15,30 @@ var earthquakesArray = [], majorCitiesArray = [];
 var monthsArray = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 var myChart, rainfallLabel = "Rainfall (mm)", temperatureLabel = "Temperature (deg C)";
 var earthQuakesCheckbox = false, majorCitiesCheckbox = false, majorCitiesShown = false, earthquakesShown = false;
-var countryCodes2Borders = {};
+var countryBordergeoJSON;
 
 // Get border and country code json data from countries_small
-var requestURL = '/mapping/libs/js/countries_small.json';
+var requestURL = '/geo-info/libs/js/countries_small.json';
 var request = new XMLHttpRequest();
 request.open('GET', requestURL);
 request.responseType = 'json';
 request.send();
 request.onload = function() {
-	countryBorders = request.response[0];
-	console.log(countryBorders)
-	countryCodes = request.response[1];
+	countryCodes = request.response[0];
 	console.log(countryCodes);
-	countryLangs = request.response[2];
-	Object.values(countryCodes).forEach(function(item) {
-		var countryBorderIndex;
-		for (var i = 0; i < countryBorders['features'].length; i++) {
-			// console.log(item);
-			if (countryBorders['features'][i]['id'] == item) {
-				countryBorderIndex = i;
-				break;
-			}
-		}
-		countryCodes2Borders[item] = countryBorderIndex;
-	});
-	console.log(countryCodes2Borders);
+	countryLangs = request.response[1];
+
+	if(!navigator.geolocation) {
+    alert('Geolocation is not supported by your browser');
+  } else {
+    status.textContent = 'Locating…';
+    navigator.geolocation.getCurrentPosition(getCountryCode, error);
+  }
 
 }
 
 // Create the map and add buttons
 $( document ).ready(function() {
-
-	console.log(window.hello)
 
 	mymap = L.map('mapid').setView([latCentre, lngCentre], 5);
 
@@ -66,69 +57,82 @@ $( document ).ready(function() {
 	var train = L.tileLayer.provider('OpenRailwayMap');
 	var safecast = L.tileLayer.provider('SafeCast');
 
-	L.easyButton ({
-		position: 'topright',
-	  states: [{
-			stateName: 'unloaded',
-	    icon: '<img src="libs/icons/terrain.svg">',
-	    title: 'Countries by terrain',
-	    onClick: function(control) {
-				if (mymap.hasLayer(terrain)) {
-					mymap.removeLayer(terrain);
-				} else {
-					mymap.addLayer(terrain);
-				}
-    	}
-		}]
-  }).addTo(mymap);
+	var baseMaps = {
 
-	L.easyButton ({
-		position: 'topright',
-	  states: [{
-			stateName: 'unloaded',
-	    icon: '<img src="libs/icons/moon.svg">',
-	    title: 'Countries by night',
-	    onClick: function(control) {
-				if (mymap.hasLayer(night)) {
-					mymap.removeLayer(night);
-				} else {
-					mymap.addLayer(night);
-				}
-    	}
-		}]
-  }).addTo(mymap);
+	};
 
-	L.easyButton ({
-		position: 'topright',
-	  states: [{
-			stateName: 'unloaded',
-	    icon: '<img src="libs/icons/train.svg">',
-	    title: 'Train lines',
-	    onClick: function(control) {
-				if (mymap.hasLayer(train)) {
-					mymap.removeLayer(train);
-				} else {
-					mymap.addLayer(train);
-				}
-    	}
-		}]
-  }).addTo(mymap);
+	var overlayMaps = {
+			"Terrain": terrain,
+			"Night": night,
+	    "Railways": train,
+			"Radiation": safecast
+	};
 
-	L.easyButton ({
-		position: 'topright',
-	  states: [{
-			stateName: 'unloaded',
-	    icon: '<img src="libs/icons/radiactive.svg">',
-	    title: 'Train lines',
-	    onClick: function(control) {
-				if (mymap.hasLayer(safecast)) {
-					mymap.removeLayer(safecast);
-				} else {
-					mymap.addLayer(safecast);
-				}
-    	}
-		}]
-  }).addTo(mymap);
+	L.control.layers(baseMaps, overlayMaps).addTo(mymap);
+
+	// L.easyButton ({
+	// 	position: 'topright',
+	//   states: [{
+	// 		stateName: 'unloaded',
+	//     icon: '<img src="libs/icons/terrain.svg">',
+	//     title: 'Countries by terrain',
+	//     onClick: function(control) {
+	// 			if (mymap.hasLayer(terrain)) {
+	// 				mymap.removeLayer(terrain);
+	// 			} else {
+	// 				mymap.addLayer(terrain);
+	// 			}
+  //   	}
+	// 	}]
+  // }).addTo(mymap);
+	//
+	// L.easyButton ({
+	// 	position: 'topright',
+	//   states: [{
+	// 		stateName: 'unloaded',
+	//     icon: '<img src="libs/icons/moon.svg">',
+	//     title: 'Countries by night',
+	//     onClick: function(control) {
+	// 			if (mymap.hasLayer(night)) {
+	// 				mymap.removeLayer(night);
+	// 			} else {
+	// 				mymap.addLayer(night);
+	// 			}
+  //   	}
+	// 	}]
+  // }).addTo(mymap);
+	//
+	// L.easyButton ({
+	// 	position: 'topright',
+	//   states: [{
+	// 		stateName: 'unloaded',
+	//     icon: '<img src="libs/icons/train.svg">',
+	//     title: 'Train lines',
+	//     onClick: function(control) {
+	// 			if (mymap.hasLayer(train)) {
+	// 				mymap.removeLayer(train);
+	// 			} else {
+	// 				mymap.addLayer(train);
+	// 			}
+  //   	}
+	// 	}]
+  // }).addTo(mymap);
+	//
+	// L.easyButton ({
+	// 	position: 'topright',
+	//   states: [{
+	// 		stateName: 'unloaded',
+	//     icon: '<img src="libs/icons/radiactive.svg">',
+	//     title: 'Train lines',
+	//     onClick: function(control) {
+	// 			if (mymap.hasLayer(safecast)) {
+	// 				mymap.removeLayer(safecast);
+	// 			} else {
+	// 				mymap.addLayer(safecast);
+	// 			}
+  //   	}
+	// 	}]
+  // }).addTo(mymap);
 
 	L.easyButton ({
 		position: 'topright',
@@ -142,6 +146,7 @@ $( document ).ready(function() {
 						item.addTo(mymap);
 					})
 					earthquakesShown = true;
+					$("#earthquake").css({ fill: 'red' });
 				} else {
 					earthquakesArray.forEach(function(item) {
 						item.remove();
@@ -174,18 +179,6 @@ $( document ).ready(function() {
 		}]
   }).addTo(mymap);
 
-	if (majorCitiesShown == false) {
-		majorCitiesArray.forEach(function(item) {
-			item.addTo(mymap);
-		})
-		majorCitiesShown = true;
-	} else {
-		majorCitiesArray.forEach(function(item) {
-			item.remove();
-		})
-		majorCitiesShown = false;
-	}
-
 	L.easyButton('<img src="libs/icons/information.svg">', function(btn, map){
 		$("#infoModalBody").html("");
 		$("#infoModalLabel").html(countryName + ' General Information');
@@ -202,19 +195,14 @@ $( document ).ready(function() {
 
 	}, 'Timezone information').addTo( mymap );
 
-	L.easyButton('<img src="libs/icons/building.svg">', function(btn, map){
-		if (majorCitiesShown == false) {
-			majorCitiesArray.forEach(function(item) {
-				item.addTo(mymap);
-			})
-			majorCitiesShown = true;
-		} else {
-			majorCitiesArray.forEach(function(item) {
-				item.remove();
-			})
-			majorCitiesShown = false;
-		}
-	}, 'Cities above 1m population').addTo( mymap );
+	L.easyButton('<img src="libs/icons/reading-book.svg">', function(btn, map){
+		$("#infoModalBody").html("");
+		$("#infoModalLabel").html(countryName + ' Wikipedia Information')
+		$("#infoModalBody").append('<img id="wiki-thumb" src="' + countryWikiInfo['Thumbnail'] + '" class="float-left">');
+		$("#infoModalBody").append('<p>' + countryWikiInfo['Summary'] + '</p>');
+		$("#infoModalBody").append('<a href="' + countryWikiInfo['Wiki URL'] + '" target="_blank" class="btn btn-primary text-center">Read More</a>');
+		jQuery('#exampleModal').modal('toggle');
+	}, 'Wikipedia Information').addTo( mymap );
 
 	L.easyButton('<img src="libs/icons/demographics-of-a-population.svg">', function(btn, map){
 		$("#infoModalBody").html("");
@@ -263,48 +251,19 @@ $( document ).ready(function() {
 
 	}, 'Gross Domestic Product').addTo( mymap );
 
-
-	//
-	function success(position) {
-    const latitude  = position.coords.latitude;
-    const longitude = position.coords.longitude;
-
-    console.log(`Latitude: ${latitude} °, Longitude: ${longitude} °`);
-
-		$.ajax({
-			url: "libs/php/getCountryCode.php",
-			type: 'POST',
-			dataType: 'json',
-			data: {
-				lat: latitude,
-				lng: longitude
-			},
-			success: function(result) {
-
-				if (result.status.name == "ok") {
-
-					console.log(result['data']['countryCode']);
-					$("#selCountry").val(result['data']['countryCode']).change();
-
-				}
-
-			},
-			error: function(jqXHR, textStatus, errorThrown) {
-				console.log("Request failed");
+	mymap.on('click', function(e){
+	  var coord = e.latlng;
+	  var position = {
+			coords: {
+				latitude: coord.lat,
+				longitude: coord.lng
 			}
-		});
-  }
+		}
+		getCountryCode(position);
 
-  function error() {
-    alert('Unable to retrieve your location');
-  }
+	});
 
-  if(!navigator.geolocation) {
-    alert('Geolocation is not supported by your browser');
-  } else {
-    status.textContent = 'Locating…';
-    navigator.geolocation.getCurrentPosition(success, error);
-  }
+
 
 });
 
@@ -317,25 +276,80 @@ function resize(){
 
 }
 
-$('#gdp').click(function() {
-	alert("gdp clicked")
-	var chartTitle = 'Economic Information';
-	var chartNameId = {
-		"GDP": "gdp",
-		"GDP per Person": "gdpPerson",
-		"GDP Growth": "gdpGrowth"
-	}
-	createChartArea(chartTitle, chartNameId);
-	createGraph("GDP per year ($)",Object.keys(countryGDPInfo),Object.values(countryGDPInfo));
-})
+// Call to get Country code after navigator getPosition
+function getCountryCode(position) {
+	const latitude  = position.coords.latitude;
+	const longitude = position.coords.longitude;
 
-// Gets country information and moves map
+	$.ajax({
+		url: "libs/php/getCountryCode.php",
+		type: 'POST',
+		dataType: 'json',
+		data: {
+			lat: latitude,
+			lng: longitude
+		},
+		success: function(result) {
+
+			if (result.status.name == "ok") {
+
+				console.log(result['data']['countryCode']);
+				$("#selCountry").val(result['data']['countryCode']).change();
+
+			}
+
+		},
+		error: function(jqXHR, textStatus, errorThrown) {
+			console.log("Request failed");
+		}
+	});
+}
+
+function error() {
+	alert('Unable to retrieve your location');
+}
+
+// Gets country information and moves map ###############################################################################
+// ######################################################################################################################
 $('#selCountry').change(function() {
-// $('#btnRun').click(function() {
+
+	var countryCode2 = $('#selCountry').val();
+	var countryCode3 = countryCodes[countryCode2];
 
 	removeMapMarkers();
 	resetArraysObjects();
 
+	// Get Country Border and add to map
+	$.ajax({
+		url: "libs/php/getCountryBorderFromCountryCode.php",
+		type: 'POST',
+		dataType: 'json',
+		data: {
+			country: countryCode2.toUpperCase()
+		},
+		success: function(result) {
+
+			if (result.status.name == "ok") {
+				console.log(result['data'])
+
+				if (typeof countryBordergeoJSON !== "undefined") {
+					countryBordergeoJSON.remove(mymap);
+				}
+
+				countryBordergeoJSON = L.geoJSON(result['data']).addTo(mymap);
+				// countryTimeInfo = {
+				// 	'Time': result['data']['time'],
+				// }
+
+			}
+
+		},
+		error: function(jqXHR, textStatus, errorThrown) {
+			console.log("Request failed");
+		}
+	});
+
+	// Get Country Info
 	$.ajax({
 		url: "libs/php/getCountryInfo.php",
 		type: 'POST',
@@ -387,6 +401,7 @@ $('#selCountry').change(function() {
 		}
 	});
 
+	// Get Time Info
 	$.ajax({
 		url: "libs/php/getTimeInfo.php",
 		type: 'POST',
@@ -415,6 +430,7 @@ $('#selCountry').change(function() {
 		}
 	});
 
+	// Get GDP Info
 	$.ajax({
 		url: "libs/php/getCountryGDPInfo.php",
 		type: 'POST',
@@ -438,6 +454,7 @@ $('#selCountry').change(function() {
 		}
 	});
 
+	// Get GDP per person
 	$.ajax({
 		url: "libs/php/getCountryGDPPersonInfo.php",
 		type: 'POST',
@@ -461,6 +478,7 @@ $('#selCountry').change(function() {
 		}
 	});
 
+	// Get GDP growth per person
 	$.ajax({
 		url: "libs/php/getCountryGDPGrowthInfo.php",
 		type: 'POST',
@@ -484,6 +502,7 @@ $('#selCountry').change(function() {
 		}
 	});
 
+	// Get major cities
 	$.ajax({
 		url: "libs/php/getMajorCitiesInfo.php",
 		type: 'POST',
@@ -508,6 +527,7 @@ $('#selCountry').change(function() {
 		}
 	});
 
+	//Get demo graphics info
 	$.ajax({
 		url: "libs/php/getCountryDemoCovidInfo.php",
 		type: 'POST',
@@ -537,14 +557,7 @@ $('#selCountry').change(function() {
 		}
 	});
 
-	var countryCode2 = $('#selCountry').val();
-	var countryCode3 = countryCodes[countryCode2];
-
-	// L.geoJSON(countryBorders).addTo(mymap);
-	if (countryCodes2Borders[countryCode3] != "undefined") {
-		L.geoJSON(countryBorders['features'][countryCodes2Borders[countryCode3]]).addTo(mymap);
-	}
-
+	// Get rainfall data
 	$.ajax({
 		url: "libs/php/getCountryClimateInfo.php",
 		type: 'POST',
@@ -566,6 +579,7 @@ $('#selCountry').change(function() {
 		}
 	});
 
+	// Get temperature data
 	$.ajax({
 		url: "libs/php/getCountryTemperatureInfo.php",
 		type: 'POST',
@@ -589,6 +603,7 @@ $('#selCountry').change(function() {
 
 });
 
+// Create icon key modal
 $('#icon-key').click(function() {
 	$("#infoModalLabel").html('Icon Key');
 	$("#infoModalBody").html('<table id="iconKey" class="table"></table> ');
