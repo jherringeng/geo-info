@@ -16,6 +16,8 @@ var monthsArray = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep"
 var myChart, rainfallLabel = "Rainfall (mm)", temperatureLabel = "Temperature (deg C)";
 var earthQuakesCheckbox = false, majorCitiesCheckbox = false, majorCitiesShown = false, earthquakesShown = false;
 var countryBordergeoJSON;
+var earthquakes;
+var layersControl, baseMaps, overlayMaps, terrain, night, train;
 
 // Get border and country code json data from countries_small
 var requestURL = '/geo-info/libs/js/countries_small.json';
@@ -51,109 +53,25 @@ $( document ).ready(function() {
 		 accessToken: 'your.mapbox.access.token'
 	}).addTo(mymap);
 
-	// L.tileLayer.provider('Stamen.Watercolor').addTo(mymap);
-	var terrain = L.tileLayer.provider('Esri.WorldImagery');
-	var night = L.tileLayer.provider('NASAGIBS.ViirsEarthAtNight2012');
-	var train = L.tileLayer.provider('OpenRailwayMap');
+	earthquakes = L.layerGroup();
 
-	var baseMaps = {
+	// L.tileLayer.provider('Stamen.Watercolor').addTo(mymap);
+	terrain = L.tileLayer.provider('Esri.WorldImagery');
+	night = L.tileLayer.provider('NASAGIBS.ViirsEarthAtNight2012');
+	train = L.tileLayer.provider('OpenRailwayMap');
+
+	baseMaps = {
 		"Street View": roads,
 		"Satellite View": terrain,
 		"Night View": night
 	};
 
-	var overlayMaps = {
+	overlayMaps = {
 	    "Railways": train,
+			"Earthquakes": earthquakes
 	};
 
-	L.control.layers(baseMaps, overlayMaps).addTo(mymap);
-
-	// L.easyButton ({
-	// 	position: 'topright',
-	//   states: [{
-	// 		stateName: 'unloaded',
-	//     icon: '<img src="libs/icons/terrain.svg">',
-	//     title: 'Countries by terrain',
-	//     onClick: function(control) {
-	// 			if (mymap.hasLayer(terrain)) {
-	// 				mymap.removeLayer(terrain);
-	// 			} else {
-	// 				mymap.addLayer(terrain);
-	// 			}
-  //   	}
-	// 	}]
-  // }).addTo(mymap);
-	//
-	// L.easyButton ({
-	// 	position: 'topright',
-	//   states: [{
-	// 		stateName: 'unloaded',
-	//     icon: '<img src="libs/icons/moon.svg">',
-	//     title: 'Countries by night',
-	//     onClick: function(control) {
-	// 			if (mymap.hasLayer(night)) {
-	// 				mymap.removeLayer(night);
-	// 			} else {
-	// 				mymap.addLayer(night);
-	// 			}
-  //   	}
-	// 	}]
-  // }).addTo(mymap);
-	//
-	// L.easyButton ({
-	// 	position: 'topright',
-	//   states: [{
-	// 		stateName: 'unloaded',
-	//     icon: '<img src="libs/icons/train.svg">',
-	//     title: 'Train lines',
-	//     onClick: function(control) {
-	// 			if (mymap.hasLayer(train)) {
-	// 				mymap.removeLayer(train);
-	// 			} else {
-	// 				mymap.addLayer(train);
-	// 			}
-  //   	}
-	// 	}]
-  // }).addTo(mymap);
-	//
-	// L.easyButton ({
-	// 	position: 'topright',
-	//   states: [{
-	// 		stateName: 'unloaded',
-	//     icon: '<img src="libs/icons/radiactive.svg">',
-	//     title: 'Train lines',
-	//     onClick: function(control) {
-	// 			if (mymap.hasLayer(safecast)) {
-	// 				mymap.removeLayer(safecast);
-	// 			} else {
-	// 				mymap.addLayer(safecast);
-	// 			}
-  //   	}
-	// 	}]
-  // }).addTo(mymap);
-
-	L.easyButton ({
-		position: 'topright',
-	  states: [{
-			stateName: 'unloaded',
-	    icon: '<img src="libs/icons/earthquake.svg">',
-	    title: 'Recent earthquakes',
-	    onClick: function(control) {
-				if (earthquakesShown == false) {
-					earthquakesArray.forEach(function(item) {
-						item.addTo(mymap);
-					})
-					earthquakesShown = true;
-					$("#earthquake").css({ fill: 'red' });
-				} else {
-					earthquakesArray.forEach(function(item) {
-						item.remove();
-					})
-					earthquakesShown = false;
-				}
-    	}
-		}]
-  }).addTo(mymap);
+	layersControl = L.control.layers(baseMaps, overlayMaps).addTo(mymap);
 
 	L.easyButton('<img src="libs/icons/information.svg">', function(btn, map){
 		$("#infoModalBody").html("");
@@ -368,16 +286,28 @@ $('#selCountry').change(function() {
 
 				result['data']['earthquakes'].forEach(function(item) {
 					var lat = item['lat'], lng = item['lng'];
-					var radius = item['magnitude'] * 10000;
+					var radius = item['magnitude'] * 8000;
 					var circle = L.circle([lat, lng], {
 							color: 'red',
 							fillColor: '#f03',
 							fillOpacity: 0.5,
 							radius: radius
-					}) // .addTo(mymap);
+					});
 					circle.bindPopup("Magnitude: " + item['magnitude'] + ", Lat: " + lat + ", Lng: " + lng + ", Datetime: " + item['datetime']);
 					earthquakesArray.push(circle);
-				})
+				});
+
+				console.log(earthquakesArray)
+				earthquakes = L.layerGroup(earthquakesArray);
+
+				overlayMaps = {
+				    "Railways": train,
+						"Earthquakes": earthquakes
+				};
+
+				mymap.removeControl(layersControl);
+
+				layersControl = L.control.layers(baseMaps, overlayMaps).addTo(mymap);
 
 			}
 
