@@ -21,9 +21,6 @@
 	$east = $output['data']['countryInfo']['east'];
 	$west = $output['data']['countryInfo']['west'];
 
-
-	$executionStartTime = microtime(true) / 1000;
-
 	$url='http://api.geonames.org/earthquakesJSON?north=' . $north . '&south=' . $south . '&east='.$east . '&west=' . $west . '&username=jherring_eng';
 
 	$ch = curl_init();
@@ -38,6 +35,19 @@
 	$decode = json_decode($result,true);
 
 	$output['data']['earthquakes'] = $decode['earthquakes'];
+
+	$url='http://api.geonames.org/search?orderby=population&featureClass=P&country=' . $_REQUEST['country'] . '&maxRows=10&type=json&username=jherring_eng';
+	$ch = curl_init();
+	curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+	curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+	curl_setopt($ch, CURLOPT_URL,$url);
+
+	$result=curl_exec($ch);
+
+	curl_close($ch);
+
+	$decode = json_decode($result,true);
+	$output['data']['cities'] = $decode['geonames'];
 
 	$output['status']['code'] = "200";
 	$output['status']['name'] = "ok";
