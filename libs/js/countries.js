@@ -180,8 +180,9 @@ function getCountryCode(position) {
 
 			if (result.status.name == "ok") {
 
-				console.log(result['data']['countryCode']);
-				$("#selCountry").val(result['data']['countryCode']).change();
+				if (typeof result['data']['countryCode'] !== "undefined") {
+					$("#selCountry").val(result['data']['countryCode']).change();
+				}
 
 			}
 
@@ -326,35 +327,35 @@ $('#selCountry').change(function() {
 		}
 	});
 
-	// Get Time Info
-	$.ajax({
-		url: "libs/php/getTimeInfo.php",
-		type: 'POST',
-		dataType: 'json',
-		data: {
-			lat: latCentre,
-			lng: lngCentre,
-			country: countryCode2
-		},
-		success: function(result) {
-
-			if (result.status.name == "ok") {
-
-				countryTimeInfo = {
-					'Time': result['data']['time'],
-					'GMT Offset': result['data']['gmtOffset'],
-					'Timezone': result['data']['timezoneId'],
-					'Sunrise': result['data']['sunrise'],
-					'Sunset': result['data']['sunset']
-				}
-
-			}
-
-		},
-		error: function(jqXHR, textStatus, errorThrown) {
-			console.log("Request failed");
-		}
-	});
+	// // Get Time Info
+	// $.ajax({
+	// 	url: "libs/php/getTimeInfo.php",
+	// 	type: 'POST',
+	// 	dataType: 'json',
+	// 	data: {
+	// 		lat: latCentre,
+	// 		lng: lngCentre,
+	// 		country: countryCode2
+	// 	},
+	// 	success: function(result) {
+	//
+	// 		if (result.status.name == "ok") {
+	//
+	// 			countryTimeInfo = {
+	// 				'Time': result['data']['time'],
+	// 				'GMT Offset': result['data']['gmtOffset'],
+	// 				'Timezone': result['data']['timezoneId'],
+	// 				'Sunrise': result['data']['sunrise'],
+	// 				'Sunset': result['data']['sunset']
+	// 			}
+	//
+	// 		}
+	//
+	// 	},
+	// 	error: function(jqXHR, textStatus, errorThrown) {
+	// 		console.log("Request failed");
+	// 	}
+	// });
 
 	// Get GDP Info
 	$.ajax({
@@ -394,43 +395,16 @@ $('#selCountry').change(function() {
 		}
 	});
 
-	//Get demo graphics info
-	$.ajax({
-		url: "libs/php/getCountryDemoCovidInfo.php",
-		type: 'POST',
-		dataType: 'json',
-		data: {
-			country: countryCode2
-		},
-		success: function(result) {
-
-			console.log(result);
-
-			try {
-				let firstKey = Object.keys(result['data'])[0];
-				result['data'][firstKey]['CasebyAgeSex'].forEach(function(item) {
-					countryPopDemo[item['age_group']] = parseInt(item['populationin1000sF']) + parseInt(item['populationin1000sM']);
-					countryPopDemoMale[item['age_group']] = parseInt(item['populationin1000sM']);
-					countryPopDemoFemale[item['age_group']] = parseInt(item['populationin1000sF']);
-				});
-			}
-			catch(e) {
-				console.log(e.message);
-			}
-
-		},
-		error: function(jqXHR, textStatus, errorThrown) {
-			console.log("Request failed: " + textStatus);
-		}
-	});
-
 	// Get rainfall data
 	$.ajax({
-		url: "libs/php/getCountryClimateInfo.php",
+		url: "libs/php/getCountryInfo2.php",
 		type: 'POST',
 		dataType: 'json',
 		data: {
-			country: countryCode3
+			countryCode2: countryCode2,
+			countryCode3: countryCode3,
+			lat: latCentre,
+			lng: lngCentre
 		},
 		success: function(result) {
 
@@ -441,33 +415,31 @@ $('#selCountry').change(function() {
 
 			}
 
+			try {
+				let firstKey = Object.keys(result['data']['demographics'])[0];
+				result['data']['demographics'][firstKey]['CasebyAgeSex'].forEach(function(item) {
+					countryPopDemo[item['age_group']] = parseInt(item['populationin1000sF']) + parseInt(item['populationin1000sM']);
+					countryPopDemoMale[item['age_group']] = parseInt(item['populationin1000sM']);
+					countryPopDemoFemale[item['age_group']] = parseInt(item['populationin1000sF']);
+				});
+			}
+			catch(e) {
+				console.log(e.message);
+			}
+
+			countryTimeInfo = {
+				'Time': result['data']['time']['time'],
+				'GMT Offset': result['data']['time']['gmtOffset'],
+				'Timezone': result['data']['time']['timezoneId'],
+				'Sunrise': result['data']['time']['sunrise'],
+				'Sunset': result['data']['time']['sunset']
+			}
+
 		},
 		error: function(jqXHR, textStatus, errorThrown) {
 			console.log("Request failed");
 		}
 	});
-
-	// // Get temperature data
-	// $.ajax({
-	// 	url: "libs/php/getCountryTemperatureInfo.php",
-	// 	type: 'POST',
-	// 	dataType: 'json',
-	// 	data: {
-	// 		country: countryCode3
-	// 	},
-	// 	success: function(result) {
-	//
-	// 		if (result.status.name == "ok") {
-	//
-	// 			countryTemperatureInfo = result['data'][0]['monthVals'];
-	//
-	// 		}
-	//
-	// 	},
-	// 	error: function(jqXHR, textStatus, errorThrown) {
-	// 		console.log("Request failed");
-	// 	}
-	// });
 
 });
 
