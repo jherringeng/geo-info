@@ -294,10 +294,18 @@ $('#selCountry').change(function() {
 				earthquakes.clearLayers();
 				earthquakes = L.layerGroup(earthquakesArray);
 
+				var redMarker = L.ExtraMarkers.icon({
+			    icon: 'fa-city',
+			    markerColor: 'cyan',
+			    shape: 'circle',
+			    prefix: 'fas'
+			  });
+
 				result['data']['cities'].forEach(function(item) {
-					city = new L.marker([item['lat'], item['lng']]).bindPopup(item['name'] + ", Population: " + item['population']);
+					city = new L.marker([item['lat'], item['lng']], {icon: redMarker}).bindPopup(item['name'] + ", Population: " + item['population']);
 					citiesArray.push(city);
 				});
+
 
 				cities.clearLayers();
 				cities = L.layerGroup(citiesArray);
@@ -313,11 +321,6 @@ $('#selCountry').change(function() {
 				layersControl = L.control.layers(baseMaps, overlayMaps).addTo(mymap);
 
 				var city = result['data']['cities'][0];
-
-				var magicMarker = new L.marker.magic([city['lat'], city['lng']], {
-				    iconUrl: 'libs/magic-marker/img/magicIcon.png',
-				    magic: 'vanishIn'
-				}).bindPopup(city['name']).addTo(mymap);
 
 			}
 
@@ -447,8 +450,9 @@ $('#selCountry').change(function() {
 $('#icon-key').click(function() {
 	$("#infoModalLabel").html('Icon Key');
 	$("#infoModalBody").html('<table id="iconKey" class="table"></table> ');
-	$("#iconKey").append('<tr><td>General Information</td><td><img src="libs/icons/information.svg"></td></tr>');
+	$("#iconKey").append('<tr><td>General Information</td><td><img src="libs/icons/information.svg"></td></tr>');	
 	$("#iconKey").append('<tr><td>Timezone Information</td><td><img width="18" height="18" src="libs/icons/wall-clock.svg"></td></tr>');
+	$("#iconKey").append('<tr><td>Wikipedia Links</td><td><img src="libs/icons/reading-book.svg"></td></tr>');
 	$("#iconKey").append('<tr><td>Population Demographics</td><td><img src="libs/icons/demographics-of-a-population.svg"></td></tr>');
 	$("#iconKey").append('<tr><td>Climate Information</td><td><img src="libs/icons/climate-change.svg"></td></tr>');
 	$("#iconKey").append('<tr><td>Gross Domestic Product</td><td><img src="libs/icons/money-growth.svg"></td></tr>');
