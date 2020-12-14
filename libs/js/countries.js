@@ -20,7 +20,7 @@ request.responseType = 'json';
 request.send();
 request.onload = function() {
 	countryCodes = request.response[0];
-	console.log(countryCodes);
+	// console.log(countryCodes);
 	countryLangs = request.response[1];
 
 	if(!navigator.geolocation) {
@@ -188,7 +188,7 @@ function getCountryCode(position) {
 
 		},
 		error: function(jqXHR, textStatus, errorThrown) {
-			console.log("Request failed");
+			// console.log("Request failed");
 		}
 	});
 }
@@ -217,7 +217,7 @@ $('#selCountry').change(function() {
 		success: function(result) {
 
 			if (result.status.name == "ok") {
-				console.log(result['data'])
+				// console.log(result['data'])
 
 				if (typeof countryBordergeoJSON !== "undefined") {
 					countryBordergeoJSON.remove(mymap);
@@ -229,7 +229,7 @@ $('#selCountry').change(function() {
 
 		},
 		error: function(jqXHR, textStatus, errorThrown) {
-			console.log("Request failed");
+			// console.log("Request failed");
 		}
 	});
 
@@ -246,8 +246,8 @@ $('#selCountry').change(function() {
 
 			if (result.status.name == "ok") {
 
-				console.log('Got country info and earthquakes')
-				console.log(result['data'])
+				// console.log('Got country info and earthquakes')
+				// console.log(result['data'])
 				countryName = result['data']['countryInfo']['countryName'];
 
 				north = result['data']['countryInfo']['north'];
@@ -326,7 +326,7 @@ $('#selCountry').change(function() {
 
 		},
 		error: function(jqXHR, textStatus, errorThrown) {
-			console.log("Request failed");
+			// console.log("Request failed");
 		}
 	});
 
@@ -356,7 +356,7 @@ $('#selCountry').change(function() {
 	//
 	// 	},
 	// 	error: function(jqXHR, textStatus, errorThrown) {
-	// 		console.log("Request failed");
+	// 		// console.log("Request failed");
 	// 	}
 	// });
 
@@ -372,8 +372,8 @@ $('#selCountry').change(function() {
 
 			if (result.status.name == "ok") {
 
-				console.log('Got GDP data');
-				console.log(result);
+				// console.log('Got GDP data');
+				// console.log(result);
 
 				var rawCountryGDPInfo = result['data']['gdp'][1];
 				for (var i = 1; i < 11; i++) {
@@ -394,7 +394,7 @@ $('#selCountry').change(function() {
 
 		},
 		error: function(jqXHR, textStatus, errorThrown) {
-			console.log("Request failed");
+			// console.log("Request failed");
 		}
 	});
 
@@ -427,7 +427,7 @@ $('#selCountry').change(function() {
 				});
 			}
 			catch(e) {
-				console.log(e.message);
+				// console.log(e.message);
 			}
 
 			countryTimeInfo = {
@@ -440,7 +440,7 @@ $('#selCountry').change(function() {
 
 		},
 		error: function(jqXHR, textStatus, errorThrown) {
-			console.log("Request failed");
+			// console.log("Request failed");
 		}
 	});
 
@@ -450,7 +450,7 @@ $('#selCountry').change(function() {
 $('#icon-key').click(function() {
 	$("#infoModalLabel").html('Icon Key');
 	$("#infoModalBody").html('<table id="iconKey" class="table"></table> ');
-	$("#iconKey").append('<tr><td>General Information</td><td><img src="libs/icons/information.svg"></td></tr>');	
+	$("#iconKey").append('<tr><td>General Information</td><td><img src="libs/icons/information.svg"></td></tr>');
 	$("#iconKey").append('<tr><td>Timezone Information</td><td><img width="18" height="18" src="libs/icons/wall-clock.svg"></td></tr>');
 	$("#iconKey").append('<tr><td>Wikipedia Links</td><td><img src="libs/icons/reading-book.svg"></td></tr>');
 	$("#iconKey").append('<tr><td>Population Demographics</td><td><img src="libs/icons/demographics-of-a-population.svg"></td></tr>');
@@ -581,7 +581,7 @@ function getWikiInfo() {
 		},
 		success: function(result) {
 
-			console.log(result);
+			// console.log(result);
 
 			if (result.status.name == "ok") {
 
@@ -596,7 +596,7 @@ function getWikiInfo() {
 
 		},
 		error: function(jqXHR, textStatus, errorThrown) {
-			console.log("Request failed:" + textStatus)
+			// console.log("Request failed:" + textStatus)
 		}
 	});
 }

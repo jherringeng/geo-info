@@ -13,7 +13,7 @@
 			},
 			success: function(result) {
 
-				console.log(result);
+				// console.log(result);
 
 				if (result.status.name == "ok") {
 					$('#txtName').html(result['data'][0]['toponymName']);

@@ -26,4 +26,4 @@
 //     accessToken: 'your.mapbox.access.token'
 // }).addTo(mymap);
 //
-// console.log("script ran");
+// // console.log("script ran");

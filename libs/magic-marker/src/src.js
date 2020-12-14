@@ -19,7 +19,7 @@
         }
         delete options.html;
         var magicIconOpts = setOptions(opts, options);
-        console.log(magicIconOpts)
+        // console.log(magicIconOpts)
         var magicIcon = L.divIcon(magicIconOpts);
         return magicIcon;
     };
